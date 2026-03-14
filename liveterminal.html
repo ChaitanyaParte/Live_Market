@@ -301,7 +301,25 @@
   .stat-divider { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
 
   .spark { height: 30px; display: flex; align-items: flex-end; gap: 2px; }
-  .spark-bar { width: 4px; border-radius: 1px; opacity: .75; transition: height .5s ease; }
+  .spark-bar { width: 4px; border-radius: 1px; opacity: .75; }
+
+  /* smooth enter/exit for flow rows */
+  .flow-row { transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.3s ease; max-height: 28px; }
+  .flow-entering { opacity: 0; transform: translateY(-6px); }
+  .flow-exiting  { opacity: 0; transform: translateY(4px); max-height: 0; padding: 0; overflow: hidden; }
+
+  /* smooth enter for signal rows */
+  .signal-row { transition: opacity 0.3s ease, transform 0.3s ease; }
+  .signal-entering { opacity: 0; transform: translateX(-8px); }
+
+  /* smooth metric value transitions */
+  .metric-value { transition: color 0.6s ease; }
+
+  /* ob-row-bg smooth width */
+  .ob-row-bg { transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  /* mid price smooth */
+  .ob-mid-price { transition: color 0.4s ease; }
 </style>
 </head>
 <body>
@@ -478,6 +496,8 @@
 const $ = id => document.getElementById(id);
 function rand(a, b, d = 2) { return +((Math.random() * (b - a) + a).toFixed(d)); }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function ease(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
 
 /* ── CLOCK ───────────────────────────────────────── */
 function updateClock() {
@@ -487,7 +507,7 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-/* ── TICKER ──────────────────────────────────────── */
+/* ── TICKER — updates text in-place, never resets scroll ── */
 const tickers = [
   { sym: 'SPX',    base: 5210   },
   { sym: 'NDX',    base: 18340  },
@@ -506,45 +526,59 @@ const tickers = [
   { sym: 'DAX',    base: 18120  },
 ];
 let tickerValues = tickers.map(t => ({ ...t, val: t.base, chg: 0 }));
+const decimals = t => t.base < 10 ? 4 : t.base < 200 ? 2 : 0;
 
-function buildTicker() {
+function buildTickerDOM() {
   const track = $('ticker-track');
-  const decimals = t => t.base < 10 ? 4 : t.base < 200 ? 2 : 0;
-  const once = () => tickerValues.map(t => {
+  const once = tickerValues.map((t, i) => {
     const dir = t.chg > 0 ? 'up' : t.chg < 0 ? 'dn' : 'flat';
-    const sym = t.chg > 0 ? '▲' : t.chg < 0 ? '▼' : '▸';
-    return `<div class="ticker-item">
+    const arrow = t.chg > 0 ? '▲' : t.chg < 0 ? '▼' : '▸';
+    return `<div class="ticker-item" data-idx="${i}">
       <span class="ticker-sym">${t.sym}</span>
       <span class="ticker-val ${dir}">${t.val.toFixed(decimals(t))}</span>
-      <span class="ticker-chg ${dir}">${sym}${Math.abs(t.chg).toFixed(2)}</span>
+      <span class="ticker-chg ${dir}">${arrow}${Math.abs(t.chg).toFixed(2)}</span>
     </div>`;
   }).join('');
-  const html = once();
-  track.innerHTML = html + html;
+  track.innerHTML = once + once;
 }
-buildTicker();
+buildTickerDOM();
 
 function updateTicker() {
   tickerValues = tickerValues.map(t => {
-    const delta = (Math.random() - 0.5) * t.base * 0.001;
-    const val   = +(t.val  + delta      ).toFixed(4);
-    const chg   = +(t.chg  + delta * 0.3).toFixed(2);
-    return { ...t, val, chg };
+    const delta = (Math.random() - 0.5) * t.base * 0.0008;
+    return { ...t, val: +(t.val + delta).toFixed(4), chg: +(t.chg + delta * 0.3).toFixed(2) };
   });
-  buildTicker();
+  const items = $('ticker-track').querySelectorAll('.ticker-item');
+  items.forEach((item, i) => {
+    const t = tickerValues[i % tickerValues.length];
+    const dir = t.chg > 0 ? 'up' : t.chg < 0 ? 'dn' : 'flat';
+    const arrow = t.chg > 0 ? '▲' : t.chg < 0 ? '▼' : '▸';
+    const valEl = item.querySelector('.ticker-val');
+    const chgEl = item.querySelector('.ticker-chg');
+    valEl.textContent = t.val.toFixed(decimals(t));
+    valEl.className = `ticker-val ${dir}`;
+    chgEl.textContent = `${arrow}${Math.abs(t.chg).toFixed(2)}`;
+    chgEl.className = `ticker-chg ${dir}`;
+  });
 }
 setInterval(updateTicker, 3500);
 
-/* ── PRICE CHART ─────────────────────────────────── */
+/* ── PRICE CHART — RAF-driven smooth streaming ── */
 const priceLabels = [];
 const priceData   = [];
 let   lastPrice   = 5210;
+let   targetPrice = 5210;
+let   displayPrice = 5210;
+let   priceAnimStart = null;
+let   priceAnimFrom = 5210;
 
 for (let i = 80; i >= 0; i--) {
   priceLabels.push('');
-  lastPrice += rand(-6, 6);
+  lastPrice += rand(-5, 5);
   priceData.push(+lastPrice.toFixed(2));
 }
+targetPrice = lastPrice;
+displayPrice = lastPrice;
 
 const priceCtx = $('priceChart').getContext('2d');
 const priceChart = new Chart(priceCtx, {
@@ -556,7 +590,7 @@ const priceChart = new Chart(priceCtx, {
       borderColor: '#00e87a',
       borderWidth: 1.5,
       pointRadius: 0,
-      tension: 0.3,
+      tension: 0.4,
       fill: true,
       backgroundColor: ctx => {
         const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
@@ -569,7 +603,7 @@ const priceChart = new Chart(priceCtx, {
   options: {
     responsive: true,
     maintainAspectRatio: false,
-    animation: { duration: 400 },
+    animation: false,
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -586,35 +620,43 @@ const priceChart = new Chart(priceCtx, {
       x: { display: false },
       y: {
         position: 'right',
-        grid: { color: 'rgba(26,48,37,0.5)' },
-        ticks: {
-          color: '#4a7a5a',
-          font: { family: 'IBM Plex Mono', size: 9 },
-          maxTicksLimit: 6,
-          callback: v => v.toFixed(0)
-        },
+        grid: { color: 'rgba(26,48,37,0.6)' },
+        ticks: { color: '#4a7a5a', font: { family: 'IBM Plex Mono', size: 9 }, maxTicksLimit: 6, callback: v => v.toFixed(0) },
         border: { display: false }
       }
     }
   }
 });
 
-function updatePriceChart() {
-  const change = (Math.random() - 0.48) * 9;
-  lastPrice = +(lastPrice + change).toFixed(2);
-  priceData.push(lastPrice);
+const PRICE_ANIM_MS = 900;
+function schedulePricePoint() {
+  const change = (Math.random() - 0.48) * 8;
+  targetPrice = +(lastPrice + change).toFixed(2);
+  lastPrice = targetPrice;
+  priceAnimFrom = priceData[priceData.length - 1];
+  priceAnimStart = null;
+
+  priceData.push(priceAnimFrom);
   priceLabels.push('');
   if (priceData.length > 90) { priceData.shift(); priceLabels.shift(); }
-  priceChart.update('none');
-}
-setInterval(updatePriceChart, 1300);
 
-/* ── VOLUME CHART ────────────────────────────────── */
-const volLabels = Array.from({ length: 16 }, (_, i) => {
-  const h = 9 + Math.floor(i * 0.9375);
-  return h + ':00';
-});
-const volData = volLabels.map(() => rand(100, 900, 0));
+  const last = priceData.length - 1;
+  function animFrame(ts) {
+    if (!priceAnimStart) priceAnimStart = ts;
+    const t = Math.min((ts - priceAnimStart) / PRICE_ANIM_MS, 1);
+    const eased = ease(t);
+    priceData[last] = +(lerp(priceAnimFrom, targetPrice, eased)).toFixed(2);
+    priceChart.update('none');
+    if (t < 1) requestAnimationFrame(animFrame);
+  }
+  requestAnimationFrame(animFrame);
+}
+setInterval(schedulePricePoint, 1300);
+
+/* ── VOLUME CHART — smooth eased bar updates ── */
+const volLabels = Array.from({ length: 16 }, (_, i) => (9 + Math.floor(i * 0.9375)) + ':00');
+const volData   = volLabels.map(() => rand(100, 900, 0));
+const volTargets = [...volData];
 
 const volCtx = $('volChart').getContext('2d');
 const volChart = new Chart(volCtx, {
@@ -622,102 +664,193 @@ const volChart = new Chart(volCtx, {
   data: {
     labels: volLabels,
     datasets: [{
-      data: volData,
+      data: [...volData],
       backgroundColor: volData.map(v =>
-        v > 700 ? 'rgba(240,165,0,0.75)'
-        : v > 500 ? 'rgba(0,212,204,0.65)'
-        : 'rgba(0,232,122,0.45)'
+        v > 700 ? 'rgba(240,165,0,0.75)' : v > 500 ? 'rgba(0,212,204,0.65)' : 'rgba(0,232,122,0.45)'
       ),
       borderWidth: 0,
-      borderRadius: 1
+      borderRadius: 2
     }]
   },
   options: {
     responsive: true,
     maintainAspectRatio: false,
-    animation: { duration: 600 },
+    animation: false,
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#0d1410',
-        borderColor: '#1a3025', borderWidth: 1,
+        backgroundColor: '#0d1410', borderColor: '#1a3025', borderWidth: 1,
         titleColor: '#4a7a5a', bodyColor: '#d4e8dc',
         titleFont: { family: 'IBM Plex Mono', size: 9 },
         bodyFont:  { family: 'IBM Plex Mono', size: 10 },
-        callbacks: { label: ctx => ' ' + ctx.parsed.y + 'K lots' }
+        callbacks: { label: ctx => ' ' + Math.round(ctx.parsed.y) + 'K lots' }
       }
     },
     scales: {
-      x: {
-        ticks: { color: '#4a7a5a', font: { family: 'IBM Plex Mono', size: 8 }, maxRotation: 0 },
-        grid: { display: false },
-        border: { display: false }
-      },
+      x: { ticks: { color: '#4a7a5a', font: { family: 'IBM Plex Mono', size: 8 }, maxRotation: 0 }, grid: { display: false }, border: { display: false } },
       y: { display: false }
     }
   }
 });
 
-function updateVolChart() {
-  const idx = Math.floor(Math.random() * volData.length);
-  volData[idx] = Math.max(50, Math.min(1000, volData[idx] + rand(-90, 130, 0)));
+const volFromData = [...volData];
+let volAnimStart = null;
+const VOL_ANIM_MS = 700;
+
+function animateVol(ts) {
+  if (!volAnimStart) volAnimStart = ts;
+  const t = Math.min((ts - volAnimStart) / VOL_ANIM_MS, 1);
+  const eased = ease(t);
+  for (let i = 0; i < volData.length; i++) {
+    volData[i] = +(lerp(volFromData[i], volTargets[i], eased)).toFixed(1);
+  }
+  volChart.data.datasets[0].data = [...volData];
   volChart.data.datasets[0].backgroundColor = volData.map(v =>
-    v > 700 ? 'rgba(240,165,0,0.75)'
-    : v > 500 ? 'rgba(0,212,204,0.65)'
-    : 'rgba(0,232,122,0.45)'
+    v > 700 ? 'rgba(240,165,0,0.75)' : v > 500 ? 'rgba(0,212,204,0.65)' : 'rgba(0,232,122,0.45)'
   );
   volChart.update('none');
+  if (t < 1) requestAnimationFrame(animateVol);
+}
+
+function updateVolChart() {
+  const idx = Math.floor(Math.random() * volTargets.length);
+  volFromData[idx] = volData[idx];
+  volTargets[idx] = Math.max(50, Math.min(1000, volTargets[idx] + rand(-80, 120, 0)));
+  volAnimStart = null;
+  requestAnimationFrame(animateVol);
 }
 setInterval(updateVolChart, 2500);
 
-/* ── ORDER BOOK ──────────────────────────────────── */
+/* ── ORDER BOOK — persistent DOM rows, in-place updates ── */
 let midPrice = 5210;
+let midTarget = 5210;
+let midFrom   = 5210;
+let midAnimStart = null;
+const MID_ANIM_MS = 600;
+const OB_LEVELS = 8;
+const OB_MAX_SZ = 2200;
 
-function renderOrderBook() {
-  const levels = 8;
-  const maxSz  = 2200;
-  let bidHTML = `<div class="ob-header" style="text-align:right">size &nbsp; bid</div>`;
-  let askHTML = `<div class="ob-header">ask &nbsp; size</div>`;
+const obState = {
+  bids: Array.from({length: OB_LEVELS}, (_, i) => ({ price: midPrice - 0.25*(i+1), size: rand(100,2200,0) })),
+  asks: Array.from({length: OB_LEVELS}, (_, i) => ({ price: midPrice + 0.25*(i+1), size: rand(100,2200,0) })),
+};
 
-  for (let i = 0; i < levels; i++) {
-    const bp = (midPrice - 0.25 * (i + 1)).toFixed(2);
-    const ap = (midPrice + 0.25 * (i + 1)).toFixed(2);
-    const bs = rand(100, 2200, 0);
-    const as = rand(100, 2200, 0);
-    bidHTML += `<div class="ob-row bid" style="justify-content:flex-end">
-      <span class="ob-row-bg" style="width:${(bs / maxSz * 100).toFixed(0)}%"></span>
-      <span class="ob-size">${bs}</span>&nbsp;
-      <span class="ob-price-bid">${bp}</span>
-    </div>`;
-    askHTML += `<div class="ob-row ask">
-      <span class="ob-row-bg" style="width:${(as / maxSz * 100).toFixed(0)}%"></span>
-      <span class="ob-price-ask">${ap}</span>&nbsp;
-      <span class="ob-size">${as}</span>
-    </div>`;
-  }
-
-  $('bids').innerHTML        = bidHTML;
-  $('asks').innerHTML        = askHTML;
+function buildOrderBookDOM() {
+  const bidsEl = $('bids');
+  const asksEl = $('asks');
+  bidsEl.innerHTML = `<div class="ob-header" style="text-align:right">size &nbsp; bid</div>`;
+  asksEl.innerHTML = `<div class="ob-header">ask &nbsp; size</div>`;
+  obState.bids.forEach((row, i) => {
+    const el = document.createElement('div');
+    el.className = 'ob-row bid';
+    el.style.justifyContent = 'flex-end';
+    el.dataset.idx = i;
+    el.innerHTML = `<span class="ob-row-bg" style="width:${(row.size/OB_MAX_SZ*100).toFixed(0)}%"></span>
+      <span class="ob-size">${Math.round(row.size)}</span>&nbsp;
+      <span class="ob-price-bid">${row.price.toFixed(2)}</span>`;
+    bidsEl.appendChild(el);
+  });
+  obState.asks.forEach((row, i) => {
+    const el = document.createElement('div');
+    el.className = 'ob-row ask';
+    el.dataset.idx = i;
+    el.innerHTML = `<span class="ob-row-bg" style="width:${(row.size/OB_MAX_SZ*100).toFixed(0)}%"></span>
+      <span class="ob-price-ask">${row.price.toFixed(2)}</span>&nbsp;
+      <span class="ob-size">${Math.round(row.size)}</span>`;
+    asksEl.appendChild(el);
+  });
   $('ob-mid').textContent    = midPrice.toFixed(2);
   $('ob-spread').textContent = 'spd ' + rand(0.1, 0.6, 1);
-  midPrice += (Math.random() - 0.49) * 0.6;
-  midPrice  = +midPrice.toFixed(2);
 }
-renderOrderBook();
-setInterval(renderOrderBook, 2000);
+buildOrderBookDOM();
 
-/* ── TRADE FLOW ──────────────────────────────────── */
+function refreshOrderBookDOM(animT) {
+  const mp = lerp(midFrom, midTarget, ease(animT));
+  const bidRows = $('bids').querySelectorAll('.ob-row');
+  const askRows = $('asks').querySelectorAll('.ob-row');
+  obState.bids.forEach((row, i) => {
+    const el = bidRows[i];
+    if (!el) return;
+    const pct = (row.size / OB_MAX_SZ * 100).toFixed(0);
+    el.querySelector('.ob-row-bg').style.width  = pct + '%';
+    el.querySelector('.ob-size').textContent     = Math.round(row.size);
+    el.querySelector('.ob-price-bid').textContent = (mp - 0.25*(i+1)).toFixed(2);
+  });
+  obState.asks.forEach((row, i) => {
+    const el = askRows[i];
+    if (!el) return;
+    const pct = (row.size / OB_MAX_SZ * 100).toFixed(0);
+    el.querySelector('.ob-row-bg').style.width  = pct + '%';
+    el.querySelector('.ob-size').textContent     = Math.round(row.size);
+    el.querySelector('.ob-price-ask').textContent = (mp + 0.25*(i+1)).toFixed(2);
+  });
+  $('ob-mid').textContent = mp.toFixed(2);
+}
+
+let obSizeTargets = {
+  bids: obState.bids.map(r => r.size),
+  asks: obState.asks.map(r => r.size),
+};
+let obSizeFrom = {
+  bids: [...obSizeTargets.bids],
+  asks: [...obSizeTargets.asks],
+};
+let obAnimStart = null;
+const OB_ANIM_MS = 500;
+
+function animateOB(ts) {
+  if (!obAnimStart) obAnimStart = ts;
+  const t = Math.min((ts - obAnimStart) / OB_ANIM_MS, 1);
+  const eased = ease(t);
+  obState.bids.forEach((row, i) => { row.size = lerp(obSizeFrom.bids[i], obSizeTargets.bids[i], eased); });
+  obState.asks.forEach((row, i) => { row.size = lerp(obSizeFrom.asks[i], obSizeTargets.asks[i], eased); });
+  const mp = lerp(midFrom, midTarget, eased);
+  midPrice = +mp.toFixed(2);
+
+  const bidRows = $('bids').querySelectorAll('.ob-row');
+  const askRows = $('asks').querySelectorAll('.ob-row');
+  obState.bids.forEach((row, i) => {
+    const el = bidRows[i]; if (!el) return;
+    el.querySelector('.ob-row-bg').style.width   = (row.size / OB_MAX_SZ * 100).toFixed(1) + '%';
+    el.querySelector('.ob-size').textContent      = Math.round(row.size);
+    el.querySelector('.ob-price-bid').textContent = (mp - 0.25*(i+1)).toFixed(2);
+  });
+  obState.asks.forEach((row, i) => {
+    const el = askRows[i]; if (!el) return;
+    el.querySelector('.ob-row-bg').style.width   = (row.size / OB_MAX_SZ * 100).toFixed(1) + '%';
+    el.querySelector('.ob-size').textContent      = Math.round(row.size);
+    el.querySelector('.ob-price-ask').textContent = (mp + 0.25*(i+1)).toFixed(2);
+  });
+  $('ob-mid').textContent = mp.toFixed(2);
+
+  if (t < 1) requestAnimationFrame(animateOB);
+}
+
+function updateOrderBook() {
+  obSizeFrom.bids = obState.bids.map(r => r.size);
+  obSizeFrom.asks = obState.asks.map(r => r.size);
+  obSizeTargets.bids = obSizeTargets.bids.map(v => Math.max(50, Math.min(OB_MAX_SZ, v + rand(-300, 400, 0))));
+  obSizeTargets.asks = obSizeTargets.asks.map(v => Math.max(50, Math.min(OB_MAX_SZ, v + rand(-300, 400, 0))));
+  midFrom   = midPrice;
+  midTarget = +(midPrice + (Math.random() - 0.49) * 0.5).toFixed(2);
+  $('ob-spread').textContent = 'spd ' + rand(0.1, 0.6, 1);
+  obAnimStart = null;
+  requestAnimationFrame(animateOB);
+}
+setInterval(updateOrderBook, 2000);
+
+/* ── TRADE FLOW — smooth slide-in ── */
 const flowSyms     = ['SPX','NDQ','AAPL','NVDA','TSLA','AMZN','META','MSFT','GLD','BTC'];
 let   flowAnomCount   = 0;
 let   largePrintCount = 0;
 
 function addFlowRow() {
-  const now   = new Date();
-  const ts    = now.toUTCString().slice(17, 25);
-  const sym   = pick(flowSyms);
-  const side  = Math.random() > 0.45 ? 'buy' : 'sell';
-  const size  = rand(100, 5000, 0);
-  const price = (5100 + Math.random() * 220).toFixed(2);
+  const now     = new Date();
+  const ts      = now.toUTCString().slice(17, 25);
+  const sym     = pick(flowSyms);
+  const side    = Math.random() > 0.45 ? 'buy' : 'sell';
+  const size    = rand(100, 5000, 0);
+  const price   = (5100 + Math.random() * 220).toFixed(2);
   const isLarge = size > 3000;
   const isAnom  = Math.random() < 0.05;
 
@@ -725,7 +858,7 @@ function addFlowRow() {
   if (isAnom)  flowAnomCount++;
 
   const row = document.createElement('div');
-  row.className = 'flow-row';
+  row.className = 'flow-row flow-entering';
   row.innerHTML = `
     <span class="flow-time">${ts}</span>
     <span class="flow-sym ${side === 'buy' ? 'up' : 'dn'}">${sym}</span>
@@ -737,47 +870,102 @@ function addFlowRow() {
 
   const log = $('flow-log');
   log.insertBefore(row, log.firstChild);
-  while (log.children.length > 16) log.removeChild(log.lastChild);
+  requestAnimationFrame(() => requestAnimationFrame(() => row.classList.remove('flow-entering')));
 
-  $('s-vol').textContent       = (3.42 + Math.random() * 0.12).toFixed(2) + 'B';
+  while (log.children.length > 16) {
+    const last = log.lastChild;
+    last.classList.add('flow-exiting');
+    setTimeout(() => last.remove(), 300);
+    break;
+  }
+
+  tweenText('s-vol',        (3.42 + Math.random() * 0.12).toFixed(2) + 'B');
   $('s-prints').textContent    = largePrintCount;
   $('s-anomalies').textContent = flowAnomCount;
   $('s-last').textContent      = sym + ' ' + side.toUpperCase();
-  $('s-adv').textContent       = rand(1.2, 3.2, 1) + '×';
+  tweenText('s-adv',        rand(1.2, 3.2, 1) + '×');
 
   if (isAnom) triggerAnomaly(sym);
   updateSpark();
 }
 setInterval(addFlowRow, 1100);
 
-/* ── SPARK BAR ───────────────────────────────────── */
-const sparkData = Array(14).fill(50);
-function updateSpark() {
-  sparkData.push(rand(20, 80, 0));
-  if (sparkData.length > 14) sparkData.shift();
-  const el = $('spark');
-  el.innerHTML = sparkData.map(v =>
-    `<div class="spark-bar" style="height:${v}%;background:${v > 65 ? 'var(--amber)' : 'var(--green)'}"></div>`
-  ).join('');
+/* ── TWEEN TEXT — smooth numeric text transitions ── */
+const tweenMap = {};
+function tweenText(id, newVal) {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = newVal;
 }
-updateSpark();
 
-/* ── SESSION METRICS ─────────────────────────────── */
+/* ── METRIC TWEENING — smooth counter animation ── */
+const metricState = { vix: 21.4, flow: 1.34, depth: 842, spread: 0.8 };
+const metricTarget = { ...metricState };
+
+function animateMetrics(ts) {
+  let dirty = false;
+  const keys = ['vix','flow','depth','spread'];
+  keys.forEach(k => {
+    if (Math.abs(metricState[k] - metricTarget[k]) > 0.005) {
+      metricState[k] = lerp(metricState[k], metricTarget[k], 0.08);
+      dirty = true;
+    } else {
+      metricState[k] = metricTarget[k];
+    }
+  });
+  if (dirty) {
+    $('m-vix').textContent    = metricState.vix.toFixed(1);
+    $('m-vix').className      = 'metric-value ' + (metricState.vix > 24 ? 'dn' : metricState.vix < 20 ? 'up' : 'flat');
+    $('m-flow').textContent   = metricState.flow.toFixed(2);
+    $('m-depth').textContent  = Math.round(metricState.depth) + 'K';
+    $('m-spread').textContent = metricState.spread.toFixed(1);
+  }
+  requestAnimationFrame(animateMetrics);
+}
+requestAnimationFrame(animateMetrics);
+
 function updateMetrics() {
-  const vix  = rand(17, 29, 1);
-  const flow = rand(0.8, 2.4, 2);
-  const dep  = rand(600, 1200, 0);
-  const sprd = rand(0.3, 2.0, 1);
-
-  $('m-vix').textContent    = vix;
-  $('m-vix').className      = 'metric-value ' + (vix > 24 ? 'dn' : vix < 20 ? 'up' : 'flat');
-  $('m-flow').textContent   = flow;
-  $('m-depth').textContent  = dep + 'K';
-  $('m-spread').textContent = sprd;
+  metricTarget.vix    = rand(17, 29, 1);
+  metricTarget.flow   = rand(0.8, 2.4, 2);
+  metricTarget.depth  = rand(600, 1200, 0);
+  metricTarget.spread = rand(0.3, 2.0, 1);
 }
 setInterval(updateMetrics, 4000);
 
-/* ── ANOMALY / ALERT SYSTEM ──────────────────────── */
+/* ── SPARK BAR ── */
+const sparkData = Array(14).fill(50);
+const sparkTargets = [...sparkData];
+const sparkFrom    = [...sparkData];
+let sparkAnimStart = null;
+const SPARK_ANIM_MS = 400;
+
+function animateSpark(ts) {
+  if (!sparkAnimStart) sparkAnimStart = ts;
+  const t = Math.min((ts - sparkAnimStart) / SPARK_ANIM_MS, 1);
+  const eased = ease(t);
+  const el = $('spark');
+  el.innerHTML = sparkData.map((_, i) => {
+    const v = lerp(sparkFrom[i] || 50, sparkTargets[i], eased);
+    return `<div class="spark-bar" style="height:${v.toFixed(1)}%;background:${v > 65 ? 'var(--amber)' : 'var(--green)'}"></div>`;
+  }).join('');
+  if (t < 1) requestAnimationFrame(animateSpark);
+}
+
+function updateSpark() {
+  sparkData.push(rand(20, 80, 0));
+  if (sparkData.length > 14) sparkData.shift();
+  sparkFrom.length = 0;
+  const bars = $('spark').querySelectorAll('.spark-bar');
+  bars.forEach(b => sparkFrom.push(parseFloat(b.style.height) || 50));
+  while (sparkFrom.length < sparkData.length) sparkFrom.push(50);
+  sparkTargets.length = 0;
+  sparkData.forEach(v => sparkTargets.push(v));
+  sparkAnimStart = null;
+  requestAnimationFrame(animateSpark);
+}
+updateSpark();
+
+/* ── ANOMALY / ALERT SYSTEM ── */
 const anomalyMessages = [
   sym => `Unusual size print: ${sym} — potential block accumulation`,
   sym => `${sym} diverging from index — momentum shift`,
@@ -787,7 +975,6 @@ const anomalyMessages = [
   sym => `${sym} bid stacking anomaly — iceberg suspected`,
   sym => `${sym} vol surface skew widening unexpectedly`,
 ];
-
 const signalTemplates = [
   { type: 'warn',  icon: '!', text: sym => `Volume surge: ${sym} +3σ above 15m avg` },
   { type: 'info',  icon: '↑', text: sym => `${sym} momentum building — 5m RSI > 70` },
@@ -802,8 +989,7 @@ let alertVisible = false;
 
 function triggerAnomaly(sym) {
   if (alertVisible) return;
-  const msg = pick(anomalyMessages)(sym);
-  $('alert-msg').textContent = msg;
+  $('alert-msg').textContent = pick(anomalyMessages)(sym);
   const banner = $('alert-banner');
   banner.classList.add('visible');
   alertVisible = true;
@@ -820,9 +1006,8 @@ function addSignal(sym) {
   const tpl = pick(signalTemplates);
   signalCount++;
   $('signal-count').textContent = signalCount + ' signal' + (signalCount !== 1 ? 's' : '');
-
   const row = document.createElement('div');
-  row.className = 'signal-row';
+  row.className = 'signal-row signal-entering';
   const ts = new Date().toUTCString().slice(17, 25);
   row.innerHTML = `
     <div class="signal-icon ${tpl.type}">${tpl.icon}</div>
@@ -831,13 +1016,10 @@ function addSignal(sym) {
   `;
   const list = $('signal-list');
   list.insertBefore(row, list.firstChild);
+  requestAnimationFrame(() => requestAnimationFrame(() => row.classList.remove('signal-entering')));
   while (list.children.length > 7) list.removeChild(list.lastChild);
 }
 
-/* Periodic background signals */
-setInterval(() => {
-  if (Math.random() < 0.15) addSignal(pick(flowSyms));
-}, 8000);
+setInterval(() => { if (Math.random() < 0.15) addSignal(pick(flowSyms)); }, 8000);
 </script>
-</body>
 </html>
