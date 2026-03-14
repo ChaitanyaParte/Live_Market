@@ -25,41 +25,32 @@
     --white:     #1a1a1a;
     --muted:     #555555;
     --border:    #d0d0d0;
-    --brand-color:  #000000;
-    --clock-color:  #000000;
-    --modal-overlay-bg: rgba(255,255,255,0.88);
-    --chart-bg:  #ffffff;
-    --chart-grid: rgba(0,0,0,0.07);
-    --chart-tick: #555555;
-    --range-cursor: #333333;
-    --sb-divider: rgba(0,0,0,0.05);
+    --brand-color:       #000000;
+    --clock-color:       #000000;
+    --modal-overlay-bg:  rgba(255,255,255,0.88);
+    --chart-bg:          #ffffff;
+    --chart-grid:        rgba(0,0,0,0.07);
+    --chart-tick:        #555555;
+    --range-cursor:      #333333;
+    --sb-divider:        rgba(0,0,0,0.05);
   }
 
   /* ── DARK THEME ── */
   body.dark-theme {
-    /* ── Monochrome foundation ── */
     --bg:        #000000;
     --bg2:       #111111;
     --bg3:       #1a1a1a;
     --border:    #2a2a2a;
-
-    /* ── Text & labels — pure white hierarchy ── */
     --white:     #ffffff;
     --muted:     #888888;
-
-    /* ── Buy/Sell signals — protected, unchanged ── */
     --green:     #00c060;
     --green2:    #009948;
     --green-dim: #001f0f;
     --red:       #e8002d;
     --red-dim:   #1f0008;
-
-    /* ── Supporting accents ── */
     --amber:     #f0a500;
     --amber-dim: #241800;
     --cyan:      #00bcd4;
-
-    /* ── Component-specific ── */
     --brand-color:       #ffffff;
     --clock-color:       #ffffff;
     --modal-overlay-bg:  rgba(0,0,0,0.92);
@@ -73,22 +64,17 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   /* ── SMOOTH THEME TRANSITION ── */
-  /* Applied globally except on elements where instant update matters */
   body.theme-transitioning *,
   body.theme-transitioning *::before,
   body.theme-transitioning *::after {
     transition:
       background-color 180ms ease,
-      background      180ms ease,
+      background       180ms ease,
       color            140ms ease,
       border-color     180ms ease,
       box-shadow       180ms ease !important;
   }
-  /* Never transition the canvas — it redraws natively */
-  body.theme-transitioning canvas {
-    transition: none !important;
-  }
-  /* Never transition animated signals/flow rows (they have their own timing) */
+  body.theme-transitioning canvas { transition: none !important; }
   body.theme-transitioning .flow-entering,
   body.theme-transitioning .flow-exiting,
   body.theme-transitioning .signal-entering {
@@ -104,143 +90,92 @@
     overflow-x: hidden;
   }
 
-  /* ── TOP BAR ──────────────────────────────────── */
+  /* ── TOP BAR ── */
   .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    padding: 6px 14px;
-    height: 34px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 6px 14px; height: 34px; position: sticky; top: 0; z-index: 100;
   }
   .topbar-left  { display: flex; align-items: center; gap: 18px; }
   .topbar-brand { color: var(--brand-color); font-weight: 700; font-size: 13px; letter-spacing: 3px; }
   .topbar-status { display: flex; gap: 10px; }
-
   .status-pill {
-    font-size: 10px; color: var(--muted);
-    padding: 2px 7px;
-    border: 1px solid var(--border);
-    border-radius: 2px;
+    font-size: 10px; color: var(--muted); padding: 2px 7px;
+    border: 1px solid var(--border); border-radius: 2px;
     display: flex; align-items: center; gap: 5px;
   }
-  .status-pill .dot {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--green);
-    animation: pulse 2s infinite;
-  }
+  .status-pill .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
   .status-pill .dot.amber { background: var(--amber); }
-
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-
   .topbar-right { display: flex; gap: 18px; align-items: center; }
-  .clock   { color: var(--clock-color); font-size: 13px; font-weight: 500; letter-spacing: 1.5px; }
+  .clock  { color: var(--clock-color); font-size: 13px; font-weight: 500; letter-spacing: 1.5px; }
   .session { color: var(--muted); font-size: 10px; }
 
-  /* ── TICKER BAR ───────────────────────────────── */
+  /* ── THEME TOGGLE ── */
+  .theme-toggle {
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 20px;
+    border: 1px solid var(--border); border-radius: 2px;
+    background: var(--bg3); cursor: pointer;
+    font-size: 13px; line-height: 1;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    flex-shrink: 0; user-select: none;
+  }
+  .theme-toggle:hover { border-color: var(--green); background: var(--green-dim); }
+
+  /* ── TICKER BAR ── */
   .ticker-bar {
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    overflow: hidden;
-    height: 27px;
-    display: flex;
-    align-items: center;
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    overflow: hidden; height: 27px; display: flex; align-items: center;
   }
   .ticker-label {
-    color: var(--muted); font-size: 10px;
-    padding: 0 10px;
-    border-right: 1px solid var(--border);
-    white-space: nowrap;
-    min-width: 64px;
-    line-height: 27px;
-    flex-shrink: 0;
+    color: var(--muted); font-size: 10px; padding: 0 10px;
+    border-right: 1px solid var(--border); white-space: nowrap;
+    min-width: 64px; line-height: 27px; flex-shrink: 0;
   }
-  .ticker-track {
-    display: flex;
-    animation: scroll 45s linear infinite;
-    white-space: nowrap;
-  }
+  .ticker-track { display: flex; animation: scroll 45s linear infinite; white-space: nowrap; }
   .ticker-item {
-    cursor: pointer;
-    transition: background .15s;
-    user-select: none;
-    padding: 0 16px;
-    font-size: 11px;
-    border-right: 1px solid var(--border);
-    display: flex; align-items: center; gap: 7px;
-    height: 27px;
+    cursor: pointer; transition: background .15s; user-select: none;
+    padding: 0 16px; font-size: 11px; border-right: 1px solid var(--border);
+    display: flex; align-items: center; gap: 7px; height: 27px;
   }
-  .ticker-item:hover { background: rgba(0,192,96,.08); }
+  .ticker-item:hover  { background: rgba(0,192,96,.08); }
   .ticker-item.pinned { background: rgba(0,192,96,.10); border-left: 2px solid var(--green); }
-  .ticker-sym  { pointer-events: none; color: var(--muted); font-size: 10px; }
-  .ticker-val  { pointer-events: none; font-weight: 500; }
-  .ticker-chg  { pointer-events: none; font-size: 10px; }
+  .ticker-sym { pointer-events: none; color: var(--muted); font-size: 10px; }
+  .ticker-val { pointer-events: none; font-weight: 500; }
+  .ticker-chg { pointer-events: none; font-size: 10px; }
   .up   { color: var(--green); }
   .dn   { color: var(--red); }
   .flat { color: var(--amber); }
-
   @keyframes scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 
-  /* ── MAIN GRID ────────────────────────────────── */
+  /* ── MAIN GRID ── */
   .main-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 284px;
     grid-template-rows: 380px 270px;
-    gap: 1px;
-    background: var(--border);
-    border-bottom: 1px solid var(--border);
+    gap: 1px; background: var(--border); border-bottom: 1px solid var(--border);
   }
 
-  /* ── PANELS ───────────────────────────────────── */
-  .panel {
-    background: var(--bg);
-    overflow: hidden;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-  }
+  /* ── PANELS ── */
+  .panel { background: var(--bg); overflow: hidden; position: relative; display: flex; flex-direction: column; }
   .panel-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 6px 10px;
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    height: 29px;
-    flex-shrink: 0;
+    padding: 6px 10px; background: var(--bg2); border-bottom: 1px solid var(--border);
+    height: 29px; flex-shrink: 0;
   }
   .panel-title { color: var(--muted); font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; }
-  .panel-badge {
-    font-size: 9px; padding: 1px 6px;
-    border-radius: 1px;
-    border: 1px solid var(--border);
-    color: var(--muted);
-  }
+  .panel-badge { font-size: 9px; padding: 1px 6px; border-radius: 1px; border: 1px solid var(--border); color: var(--muted); }
   .panel-badge.live { border-color: var(--green); color: var(--green); }
   .panel-body  { flex: 1; overflow: hidden; padding: 8px; position: relative; }
-
-  .right-col {
-    grid-column: 3;
-    grid-row: 1 / span 2;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    background: var(--border);
-  }
+  .right-col { grid-column: 3; grid-row: 1 / span 2; display: flex; flex-direction: column; gap: 1px; background: var(--border); }
   .right-col .panel { flex: 1; }
 
-  /* ── ALERT BANNER ─────────────────────────────── */
+  /* ── ALERT BANNER ── */
   .alert-banner {
-    display: none;
-    position: absolute; top: 29px; left: 0; right: 0; z-index: 20;
-    background: rgba(196,127,0,.07);
-    border-bottom: 1px solid var(--amber);
-    border-left: 3px solid var(--amber);
-    padding: 8px 12px;
-    font-size: 11px;
+    display: none; position: absolute; top: 29px; left: 0; right: 0; z-index: 20;
+    background: rgba(196,127,0,.07); border-bottom: 1px solid var(--amber);
+    border-left: 3px solid var(--amber); padding: 8px 12px; font-size: 11px;
     animation: slideDown .3s ease;
   }
   @keyframes slideDown { from{transform:translateY(-100%);opacity:0} to{transform:translateY(0);opacity:1} }
@@ -250,28 +185,48 @@
   .alert-dismiss { margin-left: auto; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; }
   .alert-dismiss:hover { color: var(--white); }
 
-  /* ── ORDER BOOK ───────────────────────────────── */
-  .orderbook {
-    display: grid;
-    grid-template-columns: 1fr 68px 1fr;
-    height: 100%;
-    overflow: hidden;
+  /* ── ORDER BOOK ── */
+  .orderbook { display: grid; grid-template-columns: 1fr 68px 1fr; height: 100%; overflow: hidden; }
+
+  /* Each column scrolls independently with a minimal scrollbar */
+  .ob-col {
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
   }
-  .ob-col { overflow: hidden; }
-  .ob-header { color: var(--muted); font-size: 9px; padding: 2px 4px; margin-bottom: 5px; }
+  .ob-col::-webkit-scrollbar { width: 2px; }
+  .ob-col::-webkit-scrollbar-track { background: transparent; }
+  .ob-col::-webkit-scrollbar-thumb { background: var(--border); border-radius: 1px; }
+  .ob-col { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+  /* Sticky header stays visible on scroll */
+  .ob-header {
+    color: var(--muted); font-size: 9px;
+    padding: 4px 4px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+    background: var(--bg);
+    z-index: 2;
+  }
+
+  /* Fixed-height rows — no margin, consistent density */
   .ob-row {
-    display: flex; justify-content: space-between;
-    padding: 2px 4px; margin-bottom: 2px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 4px;
+    height: 24px;
+    flex-shrink: 0;
     position: relative; overflow: hidden;
+    border-bottom: 1px solid rgba(128,128,128,0.06);
   }
   .ob-row-bg {
-    position: absolute; top: 0; height: 100%;
-    opacity: .12;
+    position: absolute; top: 0; height: 100%; opacity: .12;
     transition: width 0.45s cubic-bezier(0.4,0,0.2,1);
   }
-  /* Bid: size on left (outside), price on right (toward center) — bar from right */
+  /* Bid bar grows from right (size is left/outside, price toward center) */
   .bid .ob-row-bg { background: var(--green); right: 0; left: auto; }
-  /* Ask: price on left (toward center), size on right (outside) — bar from left */
+  /* Ask bar grows from left (price toward center, size right/outside) */
   .ask .ob-row-bg { background: var(--red); left: 0; }
 
   .ob-price-bid { color: var(--green); font-weight: 500; z-index: 1; position: relative; text-align: right; flex: 1; }
@@ -282,34 +237,22 @@
 
   .ob-mid {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    border-left:  1px solid var(--border);
-    border-right: 1px solid var(--border);
-    padding: 4px;
+    border-left: 1px solid var(--border); border-right: 1px solid var(--border); padding: 4px;
   }
   .ob-mid-price  { color: var(--white); font-size: 14px; font-weight: 700; transition: color 0.4s ease; }
   .ob-mid-spread { color: var(--muted); font-size: 9px; margin-top: 5px; }
 
-  /* ── TRADE FLOW ───────────────────────────────── */
-  .flow-log {
-    height: 100%; overflow: hidden;
-    display: flex; flex-direction: column;
-    font-size: 10px;
-  }
+  /* ── TRADE FLOW ── */
+  .flow-log { height: 100%; overflow: hidden; display: flex; flex-direction: column; font-size: 10px; }
   .flow-row {
     display: flex; align-items: center; gap: 7px;
-    padding: 3px 0;
-    border-bottom: 1px solid rgba(0,0,0,0.07);
-    animation: fadeIn .3s ease;
-    flex-shrink: 0;
+    padding: 3px 0; border-bottom: 1px solid rgba(0,0,0,0.07);
+    animation: fadeIn .3s ease; flex-shrink: 0;
   }
   @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
   .flow-time  { color: var(--muted); width: 48px; flex-shrink: 0; }
   .flow-sym   { width: 40px; flex-shrink: 0; font-weight: 500; }
-  .flow-side  {
-    width: 30px; flex-shrink: 0;
-    font-size: 9px; padding: 1px 3px;
-    border-radius: 1px; text-align: center;
-  }
+  .flow-side  { width: 30px; flex-shrink: 0; font-size: 9px; padding: 1px 3px; border-radius: 1px; text-align: center; }
   .flow-side.buy  { background: rgba(0,192,96,.12);  color: var(--green); border: 1px solid var(--green-dim); }
   .flow-side.sell { background: rgba(232,0,45,.10);   color: var(--red);   border: 1px solid var(--red-dim); }
   .flow-size  { color: var(--white);  width: 54px; text-align: right; flex-shrink: 0; }
@@ -317,73 +260,45 @@
   .flow-flag  { margin-left: auto; font-size: 9px; color: var(--muted); }
   .flow-flag.anomaly { color: var(--amber); }
 
-  /* ── SESSION METRICS ──────────────────────────── */
-  .metrics-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    height: 100%;
-  }
+  /* ── SESSION METRICS ── */
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; height: 100%; }
   .metric-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    padding: 8px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 2px; padding: 8px;
     display: flex; flex-direction: column; justify-content: space-between;
   }
   .metric-label { color: var(--muted); font-size: 9px; letter-spacing: .5px; }
   .metric-value { font-size: 21px; font-weight: 700; line-height: 1; margin-top: 5px; transition: color 0.6s ease; }
   .metric-sub   { font-size: 9px; margin-top: 3px; }
 
-  /* ── SIGNAL LOG ───────────────────────────────── */
-  .signal-list {
-    height: 100%; overflow: hidden;
-    display: flex; flex-direction: column; gap: 5px;
-  }
+  /* ── SIGNAL LOG ── */
+  .signal-list { height: 100%; overflow: hidden; display: flex; flex-direction: column; gap: 5px; }
   .signal-row {
-    display: flex; align-items: center; gap: 7px;
-    padding: 5px 7px;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    font-size: 10px;
-    animation: fadeIn .4s ease;
+    display: flex; align-items: center; gap: 7px; padding: 5px 7px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 2px;
+    font-size: 10px; animation: fadeIn .4s ease;
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
   .signal-entering { opacity: 0; transform: translateX(-8px); }
-  .signal-icon {
-    width: 18px; height: 18px;
-    border-radius: 2px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 10px; flex-shrink: 0;
-  }
+  .signal-icon { width: 18px; height: 18px; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
   .signal-icon.warn  { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); }
   .signal-icon.info  { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
   .signal-icon.alert { background: var(--red-dim);   color: var(--red);   border: 1px solid var(--red); }
   .signal-text { flex: 1; color: var(--white); }
   .signal-age  { color: var(--muted); font-size: 9px; }
 
-  /* ── BOTTOM STRIP ─────────────────────────────── */
+  /* ── BOTTOM STRIP ── */
   .bottom-strip {
-    display: flex;
-    height: 50px;
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
-    align-items: center;
-    padding: 0 14px;
-    gap: 22px;
-    overflow: hidden;
-    flex-wrap: nowrap;
+    display: flex; height: 50px; background: var(--bg2); border-top: 1px solid var(--border);
+    align-items: center; padding: 0 14px; gap: 22px; overflow: hidden; flex-wrap: nowrap;
   }
-  .stat-item { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
-  .stat-label { color: var(--muted); font-size: 9px; letter-spacing: .5px; }
-  .stat-value { font-size: 12px; font-weight: 500; }
+  .stat-item    { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+  .stat-label   { color: var(--muted); font-size: 9px; letter-spacing: .5px; }
+  .stat-value   { font-size: 12px; font-weight: 500; }
   .stat-divider { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+  .spark        { height: 30px; display: flex; align-items: flex-end; gap: 2px; }
+  .spark-bar    { width: 4px; border-radius: 1px; opacity: .75; }
 
-  .spark { height: 30px; display: flex; align-items: flex-end; gap: 2px; }
-  .spark-bar { width: 4px; border-radius: 1px; opacity: .75; }
-
-  /* ── PIN BAR ─────────────────────────────────── */
+  /* ── PIN BAR ── */
   .pin-bar { display:flex; align-items:center; gap:6px; padding:4px 8px; background:var(--bg3); border-bottom:1px solid var(--border); flex-shrink:0; overflow-x:auto; min-height:28px; }
   .pin-bar::-webkit-scrollbar { height:3px; }
   .pin-bar::-webkit-scrollbar-thumb { background:var(--border); }
@@ -396,79 +311,62 @@
   .pin-chip-x { padding:2px 6px; font-size:13px; color:var(--muted); background:var(--bg3); cursor:pointer; border-left:1px solid var(--border); transition:background .15s; line-height:1; }
   .pin-chip-x:hover { background:var(--red-dim); color:var(--red); }
   .pin-empty { color:var(--muted); font-size:10px; font-style:italic; }
-  .pin-hint { color:var(--muted); font-size:9px; margin-left:auto; white-space:nowrap; flex-shrink:0; }
+  .pin-hint  { color:var(--muted); font-size:9px; margin-left:auto; white-space:nowrap; flex-shrink:0; }
 
-  /* ── CANVAS WRAPPER ──────────────────────────── */
-  .candle-outer { position:relative; width:100%; height:100%; background:var(--bg); }
-  .candle-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
-  .candle-overlay-tl { position:absolute; top:8px; left:10px; pointer-events:none; z-index:2; }
-  .candle-sym { font-size:14px; font-weight:700; color:var(--green); letter-spacing:1px; }
+  /* ── CANVAS WRAPPER ── */
+  .candle-outer     { position:relative; width:100%; height:100%; background:var(--bg); }
+  .candle-canvas    { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .candle-overlay-tl{ position:absolute; top:8px; left:10px; pointer-events:none; z-index:2; }
+  .candle-sym   { font-size:14px; font-weight:700; color:var(--green); letter-spacing:1px; }
   .candle-price { font-size:15px; font-weight:700; color:var(--white); margin-top:2px; }
-  .candle-chg { font-size:11px; margin-top:1px; }
-  .candle-tf-bar { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); display:flex; gap:4px; z-index:3; }
+  .candle-chg   { font-size:11px; margin-top:1px; }
+  .candle-tf-bar{ position:absolute; bottom:8px; left:50%; transform:translateX(-50%); display:flex; gap:4px; z-index:3; }
   .tf-btn { background:var(--bg3); border:1px solid var(--border); color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:9px; padding:3px 9px; cursor:pointer; border-radius:1px; transition:all .15s; }
   .tf-btn:hover { border-color:var(--green); color:var(--green); }
-  .tf-btn.on { border-color:var(--green); color:var(--green); background:var(--green-dim); }
-  .no-pin-msg { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:8px; }
+  .tf-btn.on    { border-color:var(--green); color:var(--green); background:var(--green-dim); }
+  .no-pin-msg   { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:8px; }
   .no-pin-title { font-size:13px; color:var(--muted); }
-  .no-pin-sub { font-size:10px; color:var(--border); }
+  .no-pin-sub   { font-size:10px; color:var(--border); }
 
-  /* ── MODAL ───────────────────────────────────── */
+  /* ── MODAL ── */
   @keyframes modalIn { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
   .modal-overlay { display:none; position:fixed; inset:0; background:var(--modal-overlay-bg); z-index:999; align-items:center; justify-content:center; }
   .modal-overlay.open { display:flex; }
-  .modal { background:var(--bg); border:1px solid var(--border); width:96vw; max-width:1300px; height:90vh; display:flex; flex-direction:column; border-radius:2px; animation:modalIn .2s ease; overflow:hidden; box-shadow: 0 4px 32px rgba(0,0,0,0.10); }
+  .modal { background:var(--bg); border:1px solid var(--border); width:96vw; max-width:1300px; height:90vh; display:flex; flex-direction:column; border-radius:2px; animation:modalIn .2s ease; overflow:hidden; box-shadow:0 4px 32px rgba(0,0,0,0.10); }
   .modal-header { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:var(--bg2); border-bottom:1px solid var(--border); flex-shrink:0; gap:12px; }
-  .modal-title { color:var(--green); font-size:14px; font-weight:700; letter-spacing:2px; flex:1; }
+  .modal-title  { color:var(--green); font-size:14px; font-weight:700; letter-spacing:2px; flex:1; }
   .modal-tf-bar { display:flex; gap:4px; }
   .modal-tf-btn { background:var(--bg3); border:1px solid var(--border); color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:9px; padding:3px 10px; cursor:pointer; border-radius:1px; transition:all .15s; }
   .modal-tf-btn:hover { border-color:var(--green); color:var(--green); }
-  .modal-tf-btn.on { border-color:var(--green); color:var(--green); background:var(--green-dim); }
-  .modal-close { color:var(--muted); font-size:22px; cursor:pointer; line-height:1; padding:0 4px; flex-shrink:0; }
+  .modal-tf-btn.on    { border-color:var(--green); color:var(--green); background:var(--green-dim); }
+  .modal-close  { color:var(--muted); font-size:22px; cursor:pointer; line-height:1; padding:0 4px; flex-shrink:0; }
   .modal-close:hover { color:var(--red); }
-  .modal-stats { display:flex; border-bottom:1px solid var(--border); flex-shrink:0; background:var(--bg2); overflow-x:auto; }
-  .modal-stat { padding:10px 18px; border-right:1px solid var(--border); display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
-  .ms-label { color:var(--muted); font-size:9px; letter-spacing:.8px; text-transform:uppercase; }
-  .ms-val { font-size:16px; font-weight:700; }
-  .ms-sub { font-size:9px; color:var(--muted); }
-  .range-wrap { padding:10px 18px; border-right:1px solid var(--border); display:flex; flex-direction:column; gap:5px; min-width:230px; flex-shrink:0; justify-content:center; }
-  .range-track { width:100%; height:6px; background:var(--border); border-radius:3px; position:relative; }
-  .range-fill { position:absolute; height:100%; width:100%; background:linear-gradient(90deg,var(--red),var(--amber),var(--green)); border-radius:3px; }
+  .modal-stats  { display:flex; border-bottom:1px solid var(--border); flex-shrink:0; background:var(--bg2); overflow-x:auto; }
+  .modal-stat   { padding:10px 18px; border-right:1px solid var(--border); display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
+  .ms-label     { color:var(--muted); font-size:9px; letter-spacing:.8px; text-transform:uppercase; }
+  .ms-val       { font-size:16px; font-weight:700; }
+  .ms-sub       { font-size:9px; color:var(--muted); }
+  .range-wrap   { padding:10px 18px; border-right:1px solid var(--border); display:flex; flex-direction:column; gap:5px; min-width:230px; flex-shrink:0; justify-content:center; }
+  .range-track  { width:100%; height:6px; background:var(--border); border-radius:3px; position:relative; }
+  .range-fill   { position:absolute; height:100%; width:100%; background:linear-gradient(90deg,var(--red),var(--amber),var(--green)); border-radius:3px; }
   .range-cursor { position:absolute; top:-4px; width:4px; height:14px; background:var(--range-cursor); border-radius:2px; transform:translateX(-50%); }
   .range-labels { display:flex; justify-content:space-between; font-size:9px; color:var(--muted); }
-  .modal-body { flex:1; display:grid; grid-template-columns:1fr 210px; gap:1px; background:var(--border); overflow:hidden; min-height:0; }
+  .modal-body   { flex:1; display:grid; grid-template-columns:1fr 210px; gap:1px; background:var(--border); overflow:hidden; min-height:0; }
   .modal-chart-wrap { background:var(--bg); position:relative; overflow:hidden; }
   .modal-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
   .modal-sidebar { background:var(--bg); display:flex; flex-direction:column; overflow-y:auto; }
   .modal-sidebar::-webkit-scrollbar { width:3px; }
   .modal-sidebar::-webkit-scrollbar-thumb { background:var(--border); }
-  .sb-section { padding:10px; border-bottom:1px solid var(--border); }
-  .sb-title { color:var(--muted); font-size:9px; letter-spacing:1px; margin-bottom:7px; text-transform:uppercase; }
-  .sb-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid var(--sb-divider); }
+  .sb-section   { padding:10px; border-bottom:1px solid var(--border); }
+  .sb-title     { color:var(--muted); font-size:9px; letter-spacing:1px; margin-bottom:7px; text-transform:uppercase; }
+  .sb-row       { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid var(--sb-divider); }
   .sb-row:last-child { border-bottom:none; }
   .sb-key { color:var(--muted); font-size:10px; }
   .sb-val { font-size:10px; font-weight:500; }
-
-  /* ── THEME TOGGLE ─────────────────────────────── */
-  .theme-toggle {
-    display: flex; align-items: center; justify-content: center;
-    width: 28px; height: 20px;
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    background: var(--bg3);
-    cursor: pointer;
-    font-size: 13px;
-    line-height: 1;
-    transition: background 0.2s ease, border-color 0.2s ease;
-    flex-shrink: 0;
-    user-select: none;
-  }
-  .theme-toggle:hover { border-color: var(--green); background: var(--green-dim); }
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
 <div class="topbar">
   <div class="topbar-left">
     <span class="topbar-brand">FALCONS</span>
@@ -483,7 +381,6 @@
   </div>
 </div>
 
-<!-- TICKER BAR -->
 <div class="ticker-bar">
   <div class="ticker-label">MARKETS</div>
   <div style="overflow:hidden;flex:1;">
@@ -491,10 +388,8 @@
   </div>
 </div>
 
-<!-- MAIN GRID -->
 <div class="main-grid">
 
-  <!-- Panel 1 · Candlestick + pin system -->
   <div class="panel">
     <div class="panel-header">
       <span class="panel-title" id="price-panel-title">PRICE ACTION</span>
@@ -516,13 +411,13 @@
     </div>
   </div>
 
-  <!-- Panel 2 · Order book -->
   <div class="panel">
     <div class="panel-header">
-      <span class="panel-title">ORDER BOOK · L2</span>
+      <span class="panel-title">ORDER BOOK</span>
       <span class="panel-badge live">LIVE</span>
     </div>
-    <div class="panel-body">
+    <!-- padding:0 so rows fill edge-to-edge -->
+    <div class="panel-body" style="padding:0;">
       <div class="orderbook">
         <div class="ob-col bid" id="bids"></div>
         <div class="ob-mid">
@@ -534,7 +429,6 @@
     </div>
   </div>
 
-  <!-- Right column (spans 2 rows) -->
   <div class="right-col">
     <div class="panel">
       <div class="panel-header">
@@ -577,10 +471,9 @@
     </div>
   </div>
 
-  <!-- Panel 3 · Trade flow -->
   <div class="panel">
     <div class="panel-header">
-      <span class="panel-title">TRADE · FLOW</span>
+      <span class="panel-title">TRADE FLOW</span>
       <span class="panel-badge live">LIVE</span>
     </div>
     <div class="panel-body" style="padding:4px 8px;">
@@ -588,7 +481,6 @@
     </div>
   </div>
 
-  <!-- Panel 4 · Volume profile -->
   <div class="panel">
     <div class="panel-header">
       <span class="panel-title">VOLUME PROFILE</span>
@@ -599,42 +491,22 @@
     </div>
   </div>
 
-</div><!-- /main-grid -->
-
-<!-- BOTTOM STRIP -->
-<div class="bottom-strip">
-  <div class="stat-item">
-    <span class="stat-label">SESSION VOL</span>
-    <span class="stat-value up" id="s-vol">3.42B</span>
-  </div>
-  <div class="stat-divider"></div>
-  <div class="stat-item">
-    <span class="stat-label">ADV RATIO</span>
-    <span class="stat-value" style="color:var(--cyan)" id="s-adv">2.1×</span>
-  </div>
-  <div class="stat-divider"></div>
-  <div class="stat-item">
-    <span class="stat-label">LARGE PRINTS</span>
-    <span class="stat-value flat" id="s-prints">0</span>
-  </div>
-  <div class="stat-divider"></div>
-  <div class="stat-item">
-    <span class="stat-label">ANOMALIES</span>
-    <span class="stat-value" style="color:var(--red)" id="s-anomalies">0</span>
-  </div>
-  <div class="stat-divider"></div>
-  <div class="stat-item">
-    <span class="stat-label">PULSE</span>
-    <div class="spark" id="spark"></div>
-  </div>
-  <div class="stat-divider"></div>
-  <div class="stat-item">
-    <span class="stat-label">LAST EVENT</span>
-    <span class="stat-value" style="color:var(--muted)" id="s-last">—</span>
-  </div>
 </div>
 
-<!-- MODAL -->
+<div class="bottom-strip">
+  <div class="stat-item"><span class="stat-label">SESSION VOL</span><span class="stat-value up" id="s-vol">3.42B</span></div>
+  <div class="stat-divider"></div>
+  <div class="stat-item"><span class="stat-label">ADV RATIO</span><span class="stat-value" style="color:var(--cyan)" id="s-adv">2.1×</span></div>
+  <div class="stat-divider"></div>
+  <div class="stat-item"><span class="stat-label">LARGE PRINTS</span><span class="stat-value flat" id="s-prints">0</span></div>
+  <div class="stat-divider"></div>
+  <div class="stat-item"><span class="stat-label">ANOMALIES</span><span class="stat-value" style="color:var(--red)" id="s-anomalies">0</span></div>
+  <div class="stat-divider"></div>
+  <div class="stat-item"><span class="stat-label">PULSE</span><div class="spark" id="spark"></div></div>
+  <div class="stat-divider"></div>
+  <div class="stat-item"><span class="stat-label">LAST EVENT</span><span class="stat-value" style="color:var(--muted)" id="s-last">—</span></div>
+</div>
+
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <div class="modal-header">
@@ -654,7 +526,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-/* ─── UTILS ───────────────────────────────────── */
 const el   = id => document.getElementById(id);
 const rand = (a,b,d=2) => +((Math.random()*(b-a)+a).toFixed(d));
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
@@ -662,398 +533,253 @@ const fmt  = (v,d=2) => (+v).toFixed(d);
 const dp   = v => v<10?4 : v<200?2 : 0;
 const DPR  = () => window.devicePixelRatio || 1;
 
-/* ─── CLOCK ───────────────────────────────────── */
-setInterval(() => { el('clock').textContent = new Date().toUTCString().slice(17,25)+' UTC'; }, 1000);
-el('clock').textContent = new Date().toUTCString().slice(17,25)+' UTC';
+setInterval(()=>{ el('clock').textContent=new Date().toUTCString().slice(17,25)+' UTC'; },1000);
+el('clock').textContent=new Date().toUTCString().slice(17,25)+' UTC';
 
-/* ─── TICKER DATA ─────────────────────────────── */
-const TICKERS = [
-  {sym:'SPX',   base:5210,   name:'S&P 500'},
-  {sym:'NDX',   base:18340,  name:'Nasdaq 100'},
-  {sym:'DXY',   base:104.2,  name:'US Dollar Index'},
-  {sym:'BTCUSD',base:67800,  name:'Bitcoin'},
-  {sym:'GOLD',  base:2384,   name:'Gold Futures'},
-  {sym:'WTI',   base:78.4,   name:'WTI Crude'},
-  {sym:'EURUSD',base:1.0842, name:'Euro / USD'},
-  {sym:'VIX',   base:21.4,   name:'Volatility Index'},
-  {sym:'TSLA',  base:178.3,  name:'Tesla Inc'},
-  {sym:'NVDA',  base:880.5,  name:'NVIDIA Corp'},
-  {sym:'AAPL',  base:171.2,  name:'Apple Inc'},
-  {sym:'T10Y',  base:4.28,   name:'10Y Treasury'},
-  {sym:'BRL',   base:5.02,   name:'Brazilian Real'},
-  {sym:'HANG',  base:17440,  name:'Hang Seng'},
-  {sym:'DAX',   base:18120,  name:'DAX Index'},
+const TICKERS=[
+  {sym:'SPX',base:5210,name:'S&P 500'},{sym:'NDX',base:18340,name:'Nasdaq 100'},
+  {sym:'DXY',base:104.2,name:'US Dollar Index'},{sym:'BTCUSD',base:67800,name:'Bitcoin'},
+  {sym:'GOLD',base:2384,name:'Gold Futures'},{sym:'WTI',base:78.4,name:'WTI Crude'},
+  {sym:'EURUSD',base:1.0842,name:'Euro / USD'},{sym:'VIX',base:21.4,name:'Volatility Index'},
+  {sym:'TSLA',base:178.3,name:'Tesla Inc'},{sym:'NVDA',base:880.5,name:'NVIDIA Corp'},
+  {sym:'AAPL',base:171.2,name:'Apple Inc'},{sym:'T10Y',base:4.28,name:'10Y Treasury'},
+  {sym:'BRL',base:5.02,name:'Brazilian Real'},{sym:'HANG',base:17440,name:'Hang Seng'},
+  {sym:'DAX',base:18120,name:'DAX Index'},
 ];
-let tickerVals = TICKERS.map(t => ({...t, val:t.base, chg:0}));
-
-const symMeta = {};
-TICKERS.forEach(t => {
-  const b = t.base;
-  symMeta[t.sym] = {
-    open:   +(b*(1+(Math.random()-0.5)*0.012)).toFixed(4),
-    dayHi:  +(b*1.015).toFixed(4),
-    dayLo:  +(b*0.985).toFixed(4),
-    w52Hi:  +(b*1.28).toFixed(4),
-    w52Lo:  +(b*0.71).toFixed(4),
-    vol:    rand(12,820,0)+'M',
-    avgVol: rand(80,600,0)+'M',
-    mktCap: b>1000 ? rand(1.2,3.8,2)+'T' : rand(200,900,0)+'B',
+let tickerVals=TICKERS.map(t=>({...t,val:t.base,chg:0}));
+const symMeta={};
+TICKERS.forEach(t=>{
+  const b=t.base;
+  symMeta[t.sym]={
+    open:+(b*(1+(Math.random()-0.5)*0.012)).toFixed(4),
+    dayHi:+(b*1.015).toFixed(4), dayLo:+(b*0.985).toFixed(4),
+    w52Hi:+(b*1.28).toFixed(4),  w52Lo:+(b*0.71).toFixed(4),
+    vol:rand(12,820,0)+'M', avgVol:rand(80,600,0)+'M',
+    mktCap:b>1000?rand(1.2,3.8,2)+'T':rand(200,900,0)+'B',
   };
 });
 
-/* ─── PIN STATE ───────────────────────────────── */
-let pinnedSyms=[], activePin=null, activeTF='1m';
-const TFS = ['1m','5m','15m','1h'];
-
-/* ─── CANDLE STORE ────────────────────────────── */
-const candleStore = {};
-function getCandles(sym, tf) {
-  const key = sym+'_'+tf;
-  if (!candleStore[key]) {
-    const base  = TICKERS.find(t=>t.sym===sym)?.base || 100;
-    const count = tf==='1m'?60 : tf==='5m'?48 : tf==='15m'?36 : 28;
-    const arr=[]; let price=base;
-    for (let i=0;i<count;i++) {
-      const o=price, mv=base*0.009;
-      const h=o+rand(0,mv), l=o-rand(0,mv), c=l+rand(0,h-l);
-      arr.push({o,h,l,c,vol:rand(200,900,0)}); price=c;
+let pinnedSyms=[],activePin=null,activeTF='1m';
+const TFS=['1m','5m','15m','1h'];
+const candleStore={};
+function getCandles(sym,tf){
+  const key=sym+'_'+tf;
+  if(!candleStore[key]){
+    const base=TICKERS.find(t=>t.sym===sym)?.base||100;
+    const count=tf==='1m'?60:tf==='5m'?48:tf==='15m'?36:28;
+    const arr=[];let price=base;
+    for(let i=0;i<count;i++){
+      const o=price,mv=base*0.009;
+      const h=o+rand(0,mv),l=o-rand(0,mv),c=l+rand(0,h-l);
+      arr.push({o,h,l,c,vol:rand(200,900,0)});price=c;
     }
     const m=symMeta[sym];
-    if(m){ m.dayHi=Math.max(m.dayHi,...arr.map(c=>c.h)); m.dayLo=Math.min(m.dayLo,...arr.map(c=>c.l)); }
+    if(m){m.dayHi=Math.max(m.dayHi,...arr.map(c=>c.h));m.dayLo=Math.min(m.dayLo,...arr.map(c=>c.l));}
     candleStore[key]=arr;
   }
   return candleStore[key];
 }
-function pushCandle(sym,tf) {
+function pushCandle(sym,tf){
   const arr=getCandles(sym,tf);
   const base=TICKERS.find(t=>t.sym===sym)?.base||100;
-  const last=arr[arr.length-1], o=last.c, mv=base*0.009;
-  const h=o+rand(0,mv), l=o-rand(0,mv), c=l+rand(0,h-l);
+  const last=arr[arr.length-1],o=last.c,mv=base*0.009;
+  const h=o+rand(0,mv),l=o-rand(0,mv),c=l+rand(0,h-l);
   arr.push({o,h,l,c,vol:rand(200,900,0)});
   const max=tf==='1m'?60:tf==='5m'?48:tf==='15m'?36:28;
-  if(arr.length>max) arr.shift();
+  if(arr.length>max)arr.shift();
   const m=symMeta[sym];
   if(m){if(h>m.dayHi)m.dayHi=+h.toFixed(4);if(l<m.dayLo)m.dayLo=+l.toFixed(4);}
 }
 
-/* ═══════════════════════════════════════════════
-   NATIVE CANVAS CANDLESTICK RENDERER
-   ═══════════════════════════════════════════════ */
-function setupCanvas(canvas) {
-  const dpr = DPR();
-  const rect = canvas.getBoundingClientRect();
-  const w = rect.width  || canvas.parentElement.clientWidth;
-  const h = rect.height || canvas.parentElement.clientHeight;
-  canvas.width  = Math.round(w * dpr);
-  canvas.height = Math.round(h * dpr);
-  canvas.style.width  = w + 'px';
-  canvas.style.height = h + 'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  return {ctx, w, h};
+function setupCanvas(canvas){
+  const dpr=DPR(),rect=canvas.getBoundingClientRect();
+  const w=rect.width||canvas.parentElement.clientWidth;
+  const h=rect.height||canvas.parentElement.clientHeight;
+  canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr);
+  canvas.style.width=w+'px'; canvas.style.height=h+'px';
+  const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+  return{ctx,w,h};
 }
 
-function drawCandles(canvas, candles, opts={}) {
-  if (!canvas || !candles.length) return;
-  const {ctx, w, h} = setupCanvas(canvas);
-
-  const PAD_L  = opts.modal ? 12 : 8;
-  const PAD_R  = opts.modal ? 64 : 52;
-  const PAD_T  = opts.modal ? 28 : 24;
-  const PAD_B  = opts.modal ? 36 : 28;
-  const chartW = w - PAD_L - PAD_R;
-  const chartH = h - PAD_T - PAD_B;
-
-  let lo = Infinity, hi = -Infinity;
-  candles.forEach(c => { if(c.l<lo) lo=c.l; if(c.h>hi) hi=c.h; });
-  const pad = (hi-lo)*0.05 || lo*0.002;
-  lo -= pad; hi += pad;
-  const priceRange = hi - lo;
-  const toY = p => PAD_T + chartH - ((p-lo)/priceRange)*chartH;
-
-  /* white background for chart area */
-  const styles = getComputedStyle(document.body);
-  const chartBg   = styles.getPropertyValue('--chart-bg').trim()   || '#ffffff';
-  const chartGrid = styles.getPropertyValue('--chart-grid').trim()  || 'rgba(0,0,0,0.07)';
-  const chartTick = styles.getPropertyValue('--chart-tick').trim()  || '#555555';
-  ctx.fillStyle = chartBg;
-  ctx.fillRect(0, 0, w, h);
-
-  /* grid lines — light grey */
-  ctx.strokeStyle = chartGrid;
-  ctx.lineWidth = 0.5;
-  const gridLines = opts.modal ? 6 : 4;
-  for (let i=0; i<=gridLines; i++) {
-    const y = PAD_T + (chartH/gridLines)*i;
-    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(PAD_L+chartW, y); ctx.stroke();
+function drawCandles(canvas,candles,opts={}){
+  if(!canvas||!candles.length)return;
+  const{ctx,w,h}=setupCanvas(canvas);
+  const PAD_L=opts.modal?12:8,PAD_R=opts.modal?64:52;
+  const PAD_T=opts.modal?28:24,PAD_B=opts.modal?36:28;
+  const chartW=w-PAD_L-PAD_R,chartH=h-PAD_T-PAD_B;
+  let lo=Infinity,hi=-Infinity;
+  candles.forEach(c=>{if(c.l<lo)lo=c.l;if(c.h>hi)hi=c.h;});
+  const pad=(hi-lo)*0.05||lo*0.002;
+  lo-=pad;hi+=pad;
+  const priceRange=hi-lo;
+  const toY=p=>PAD_T+chartH-((p-lo)/priceRange)*chartH;
+  const styles=getComputedStyle(document.body);
+  const chartBg=styles.getPropertyValue('--chart-bg').trim()||'#ffffff';
+  const chartGrid=styles.getPropertyValue('--chart-grid').trim()||'rgba(0,0,0,0.07)';
+  const chartTick=styles.getPropertyValue('--chart-tick').trim()||'#555555';
+  ctx.fillStyle=chartBg; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle=chartGrid; ctx.lineWidth=0.5;
+  const gridLines=opts.modal?6:4;
+  for(let i=0;i<=gridLines;i++){
+    const y=PAD_T+(chartH/gridLines)*i;
+    ctx.beginPath();ctx.moveTo(PAD_L,y);ctx.lineTo(PAD_L+chartW,y);ctx.stroke();
   }
-
-  /* price axis labels */
-  ctx.fillStyle = chartTick;
-  ctx.font = `${opts.modal?10:9}px 'IBM Plex Mono', monospace`;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  for (let i=0; i<=gridLines; i++) {
-    const price = hi - (priceRange/gridLines)*i;
-    const y = PAD_T + (chartH/gridLines)*i;
-    ctx.fillText(price.toFixed(dp(price)), PAD_L+chartW+4, y);
+  ctx.fillStyle=chartTick;
+  ctx.font=`${opts.modal?10:9}px 'IBM Plex Mono',monospace`;
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  for(let i=0;i<=gridLines;i++){
+    const price=hi-(priceRange/gridLines)*i;
+    const y=PAD_T+(chartH/gridLines)*i;
+    ctx.fillText(price.toFixed(dp(price)),PAD_L+chartW+4,y);
   }
-
-  if (opts.modal && opts.sym) {
-    const m = symMeta[opts.sym];
-    if (m) {
-      const lines = [
-        {val:m.dayHi, col:'rgba(0,192,96,0.7)',   label:'D-HI  '+fmt(m.dayHi, dp(m.dayHi))},
-        {val:m.dayLo, col:'rgba(232,0,45,0.7)',    label:'D-LO  '+fmt(m.dayLo, dp(m.dayLo))},
-        {val:m.w52Hi, col:'rgba(0,153,168,0.55)',  label:'52W-HI '+fmt(m.w52Hi, dp(m.w52Hi))},
-        {val:m.w52Lo, col:'rgba(196,127,0,0.55)',  label:'52W-LO '+fmt(m.w52Lo, dp(m.w52Lo))},
-      ];
-      lines.forEach(({val,col,label}) => {
-        if (val < lo || val > hi) return;
-        const y = toY(val);
-        ctx.save();
-        ctx.setLineDash([5,5]); ctx.strokeStyle=col; ctx.lineWidth=1.2;
-        ctx.beginPath(); ctx.moveTo(PAD_L,y); ctx.lineTo(PAD_L+chartW,y); ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle=col; ctx.font="bold 10px 'IBM Plex Mono',monospace";
-        ctx.textAlign='left'; ctx.textBaseline='bottom';
-        ctx.fillText(label, PAD_L+6, y-2);
-        ctx.restore();
+  if(opts.modal&&opts.sym){
+    const m=symMeta[opts.sym];
+    if(m){
+      [{val:m.dayHi,col:'rgba(0,192,96,0.7)',label:'D-HI  '+fmt(m.dayHi,dp(m.dayHi))},
+       {val:m.dayLo,col:'rgba(232,0,45,0.7)',label:'D-LO  '+fmt(m.dayLo,dp(m.dayLo))},
+       {val:m.w52Hi,col:'rgba(0,153,168,0.55)',label:'52W-HI '+fmt(m.w52Hi,dp(m.w52Hi))},
+       {val:m.w52Lo,col:'rgba(196,127,0,0.55)',label:'52W-LO '+fmt(m.w52Lo,dp(m.w52Lo))},
+      ].forEach(({val,col,label})=>{
+        if(val<lo||val>hi)return;
+        const y=toY(val);
+        ctx.save();ctx.setLineDash([5,5]);ctx.strokeStyle=col;ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.moveTo(PAD_L,y);ctx.lineTo(PAD_L+chartW,y);ctx.stroke();
+        ctx.setLineDash([]);ctx.fillStyle=col;ctx.font="bold 10px 'IBM Plex Mono',monospace";
+        ctx.textAlign='left';ctx.textBaseline='bottom';ctx.fillText(label,PAD_L+6,y-2);ctx.restore();
       });
     }
   }
-
-  const n   = candles.length;
-  const slotW = chartW / n;
-  const maxBW = opts.modal ? 28 : 18;
-  const bodyW = Math.min(maxBW, Math.max(3, slotW * 0.65));
-
-  candles.forEach((c, i) => {
-    const xCenter = PAD_L + (i + 0.5) * slotW;
-    const oY = toY(c.o), hY = toY(c.h), lY = toY(c.l), cY = toY(c.c);
-    const bull = c.c >= c.o;
-    /* keep green/red signals fully saturated on white */
-    const col = bull ? '#00c060' : '#e8002d';
-    ctx.strokeStyle = col;
-    ctx.lineWidth   = opts.modal ? 1.5 : 1.2;
-    ctx.beginPath(); ctx.moveTo(xCenter, hY); ctx.lineTo(xCenter, lY); ctx.stroke();
-    const bTop = Math.min(oY, cY);
-    const bH   = Math.max(opts.modal ? 2 : 1.5, Math.abs(cY - oY));
-    ctx.fillStyle = col;
-    ctx.fillRect(xCenter - bodyW/2, bTop, bodyW, bH);
-    if (bH > 4) {
-      ctx.strokeStyle = bull ? 'rgba(0,192,96,0.35)' : 'rgba(232,0,45,0.35)';
-      ctx.lineWidth = 0.5;
-      ctx.strokeRect(xCenter - bodyW/2, bTop, bodyW, bH);
-    }
+  const n=candles.length,slotW=chartW/n;
+  const maxBW=opts.modal?28:18,bodyW=Math.min(maxBW,Math.max(3,slotW*0.65));
+  candles.forEach((c,i)=>{
+    const xC=PAD_L+(i+0.5)*slotW;
+    const oY=toY(c.o),hY=toY(c.h),lY=toY(c.l),cY=toY(c.c);
+    const bull=c.c>=c.o,col=bull?'#00c060':'#e8002d';
+    ctx.strokeStyle=col;ctx.lineWidth=opts.modal?1.5:1.2;
+    ctx.beginPath();ctx.moveTo(xC,hY);ctx.lineTo(xC,lY);ctx.stroke();
+    const bTop=Math.min(oY,cY),bH=Math.max(opts.modal?2:1.5,Math.abs(cY-oY));
+    ctx.fillStyle=col;ctx.fillRect(xC-bodyW/2,bTop,bodyW,bH);
+    if(bH>4){ctx.strokeStyle=bull?'rgba(0,192,96,0.35)':'rgba(232,0,45,0.35)';ctx.lineWidth=0.5;ctx.strokeRect(xC-bodyW/2,bTop,bodyW,bH);}
   });
-
-  /* last price dashed line */
-  const last = candles[candles.length-1];
-  const lastY = toY(last.c);
-  const bull = last.c >= last.o;
-  ctx.save();
-  ctx.setLineDash([3,3]);
-  ctx.strokeStyle = bull ? 'rgba(0,192,96,0.5)' : 'rgba(232,0,45,0.5)';
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(PAD_L, lastY); ctx.lineTo(PAD_L+chartW, lastY); ctx.stroke();
-  ctx.restore();
-
-  /* price tag */
-  const tagX = PAD_L + chartW + 2;
-  const priceStr = last.c.toFixed(dp(last.c));
-  ctx.font = `bold ${opts.modal?11:10}px 'IBM Plex Mono',monospace`;
-  const tw = ctx.measureText(priceStr).width + 8;
-  ctx.fillStyle = bull ? '#00c060' : '#e8002d';
-  ctx.fillRect(tagX, lastY - (opts.modal?9:8), tw, opts.modal?17:15);
-  ctx.fillStyle = '#ffffff';
-  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillText(priceStr, tagX+4, lastY);
-
-  return {last, first:candles[0]};
+  const last=candles[candles.length-1],lastY=toY(last.c),bull=last.c>=last.o;
+  ctx.save();ctx.setLineDash([3,3]);ctx.strokeStyle=bull?'rgba(0,192,96,0.5)':'rgba(232,0,45,0.5)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PAD_L,lastY);ctx.lineTo(PAD_L+chartW,lastY);ctx.stroke();ctx.restore();
+  const tagX=PAD_L+chartW+2,priceStr=last.c.toFixed(dp(last.c));
+  ctx.font=`bold ${opts.modal?11:10}px 'IBM Plex Mono',monospace`;
+  const tw=ctx.measureText(priceStr).width+8;
+  ctx.fillStyle=bull?'#00c060':'#e8002d';
+  ctx.fillRect(tagX,lastY-(opts.modal?9:8),tw,opts.modal?17:15);
+  ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillText(priceStr,tagX+4,lastY);
+  return{last,first:candles[0]};
 }
 
-/* ─── TICKER RENDER ───────────────────────────── */
-function renderTicker() {
-  const items = tickerVals.map(t => {
-    const d   = dp(t.base);
-    const dir = t.chg>0?'up':t.chg<0?'dn':'flat';
-    const arr = t.chg>0?'▲':t.chg<0?'▼':'▸';
-    const pin = pinnedSyms.includes(t.sym);
-    return `<div class="ticker-item${pin?' pinned':''}" data-sym="${t.sym}">
+function renderTicker(){
+  const items=tickerVals.map(t=>{
+    const d=dp(t.base),dir=t.chg>0?'up':t.chg<0?'dn':'flat';
+    const arr=t.chg>0?'▲':t.chg<0?'▼':'▸',pin=pinnedSyms.includes(t.sym);
+    return`<div class="ticker-item${pin?' pinned':''}" data-sym="${t.sym}">
       <span class="ticker-sym">${t.sym}${pin?' 📌':''}</span>
       <span class="ticker-val ${dir}">${t.val.toFixed(d)}</span>
       <span class="ticker-chg ${dir}">${arr}${Math.abs(t.chg).toFixed(2)}</span>
     </div>`;
   }).join('');
-  el('ticker-track').innerHTML = items+items;
-  el('ticker-track').querySelectorAll('.ticker-item').forEach(n =>
-    n.addEventListener('click', () => togglePin(n.dataset.sym))
-  );
+  el('ticker-track').innerHTML=items+items;
+  el('ticker-track').querySelectorAll('.ticker-item').forEach(n=>n.addEventListener('click',()=>togglePin(n.dataset.sym)));
 }
 renderTicker();
-setInterval(() => {
-  tickerVals = tickerVals.map(t => {
-    const d=(Math.random()-0.5)*t.base*0.001;
-    return {...t, val:+(t.val+d).toFixed(4), chg:+(t.chg+d*0.3).toFixed(2)};
-  });
+setInterval(()=>{
+  tickerVals=tickerVals.map(t=>{const d=(Math.random()-0.5)*t.base*0.001;return{...t,val:+(t.val+d).toFixed(4),chg:+(t.chg+d*0.3).toFixed(2)};});
   renderTicker();
-}, 3500);
+},3500);
 
-/* ─── PIN / UNPIN ─────────────────────────────── */
-function togglePin(sym){ pinnedSyms.includes(sym)?unpin(sym):pin(sym); }
-function pin(sym){
-  TFS.forEach(tf=>getCandles(sym,tf));
-  pinnedSyms.push(sym); activePin=sym;
-  renderPinBar(); renderSmallPanel(); renderTicker();
-}
-function unpin(sym){
-  pinnedSyms=pinnedSyms.filter(s=>s!==sym);
-  if(activePin===sym) activePin=pinnedSyms.length?pinnedSyms[pinnedSyms.length-1]:null;
-  renderPinBar(); renderSmallPanel(); renderTicker();
-}
-function switchTo(sym){
-  if(!pinnedSyms.includes(sym)) return;
-  activePin=sym; renderPinBar(); renderSmallPanel();
-}
+function togglePin(sym){pinnedSyms.includes(sym)?unpin(sym):pin(sym);}
+function pin(sym){TFS.forEach(tf=>getCandles(sym,tf));pinnedSyms.push(sym);activePin=sym;renderPinBar();renderSmallPanel();renderTicker();}
+function unpin(sym){pinnedSyms=pinnedSyms.filter(s=>s!==sym);if(activePin===sym)activePin=pinnedSyms.length?pinnedSyms[pinnedSyms.length-1]:null;renderPinBar();renderSmallPanel();renderTicker();}
+function switchTo(sym){if(!pinnedSyms.includes(sym))return;activePin=sym;renderPinBar();renderSmallPanel();}
 
 function renderPinBar(){
-  const bar=el('pin-bar'); bar.innerHTML='';
-  if(!pinnedSyms.length){
-    const e=document.createElement('span'); e.className='pin-empty';
-    e.textContent='No charts pinned — click any ticker above'; bar.appendChild(e); return;
-  }
+  const bar=el('pin-bar');bar.innerHTML='';
+  if(!pinnedSyms.length){const e=document.createElement('span');e.className='pin-empty';e.textContent='No charts pinned — click any ticker above';bar.appendChild(e);return;}
   pinnedSyms.forEach(sym=>{
-    const chip=document.createElement('div');
-    chip.className='pin-chip'+(sym===activePin?' active':'');
-    const label=document.createElement('span'); label.className='pin-chip-label'; label.textContent='📌 '+sym;
-    const exp=document.createElement('span'); exp.className='pin-chip-expand'; exp.textContent='⤢'; exp.title='Expand';
-    const x=document.createElement('span'); x.className='pin-chip-x'; x.textContent='×';
-    label.addEventListener('click', e=>{e.stopPropagation();switchTo(sym);});
-    exp.addEventListener('click',   e=>{e.stopPropagation();openModal(sym);});
-    x.addEventListener('click',     e=>{e.stopPropagation();unpin(sym);});
-    chip.append(label,exp,x); bar.appendChild(chip);
+    const chip=document.createElement('div');chip.className='pin-chip'+(sym===activePin?' active':'');
+    const label=document.createElement('span');label.className='pin-chip-label';label.textContent='📌 '+sym;
+    const exp=document.createElement('span');exp.className='pin-chip-expand';exp.textContent='⤢';exp.title='Expand';
+    const x=document.createElement('span');x.className='pin-chip-x';x.textContent='×';
+    label.addEventListener('click',e=>{e.stopPropagation();switchTo(sym);});
+    exp.addEventListener('click',e=>{e.stopPropagation();openModal(sym);});
+    x.addEventListener('click',e=>{e.stopPropagation();unpin(sym);});
+    chip.append(label,exp,x);bar.appendChild(chip);
   });
-  const hint=document.createElement('span'); hint.className='pin-hint';
-  hint.textContent='label=switch · ⤢=expand · ×=unpin'; bar.appendChild(hint);
+  const hint=document.createElement('span');hint.className='pin-hint';hint.textContent='label=switch · ⤢=expand · ×=unpin';bar.appendChild(hint);
 }
 
-/* ─── SMALL PANEL ─────────────────────────────── */
 let smallCanvas=null;
 function renderSmallPanel(){
   const area=el('candle-area');
   el('price-panel-title').textContent=activePin?activePin+' · PRICE ACTION':'PRICE ACTION';
-  if(!activePin){
-    smallCanvas=null;
-    area.innerHTML=`<div class="no-pin-msg"><span class="no-pin-title">No chart pinned</span><span class="no-pin-sub">Click any ticker to pin</span></div>`;
-    return;
-  }
-  area.innerHTML=`
-    <div class="candle-outer" id="small-outer">
-      <canvas id="small-canvas" class="candle-canvas"></canvas>
-      <div class="candle-overlay-tl">
-        <div class="candle-sym" id="c-sym">${activePin}</div>
-        <div class="candle-price" id="c-price">—</div>
-        <div class="candle-chg"  id="c-chg"></div>
-      </div>
-      <div class="candle-tf-bar" id="small-tf-bar"></div>
-    </div>`;
-  smallCanvas = el('small-canvas');
-  buildSmallTFBar();
-  redrawSmall();
+  if(!activePin){smallCanvas=null;area.innerHTML=`<div class="no-pin-msg"><span class="no-pin-title">No chart pinned</span><span class="no-pin-sub">Click any ticker to pin</span></div>`;return;}
+  area.innerHTML=`<div class="candle-outer" id="small-outer">
+    <canvas id="small-canvas" class="candle-canvas"></canvas>
+    <div class="candle-overlay-tl">
+      <div class="candle-sym" id="c-sym">${activePin}</div>
+      <div class="candle-price" id="c-price">—</div>
+      <div class="candle-chg" id="c-chg"></div>
+    </div>
+    <div class="candle-tf-bar" id="small-tf-bar"></div>
+  </div>`;
+  smallCanvas=el('small-canvas');buildSmallTFBar();redrawSmall();
 }
-
 function buildSmallTFBar(){
-  const bar=el('small-tf-bar'); if(!bar) return; bar.innerHTML='';
-  TFS.forEach(tf=>{
-    const b=document.createElement('button'); b.className='tf-btn'+(tf===activeTF?' on':''); b.textContent=tf;
-    b.addEventListener('click',()=>{ activeTF=tf; buildSmallTFBar(); redrawSmall(); }); bar.appendChild(b);
-  });
+  const bar=el('small-tf-bar');if(!bar)return;bar.innerHTML='';
+  TFS.forEach(tf=>{const b=document.createElement('button');b.className='tf-btn'+(tf===activeTF?' on':'');b.textContent=tf;b.addEventListener('click',()=>{activeTF=tf;buildSmallTFBar();redrawSmall();});bar.appendChild(b);});
 }
-
 function redrawSmall(crossfade=false){
-  if(!activePin||!smallCanvas) return;
-  const outer=el('small-outer'); if(!outer) return;
-  smallCanvas.style.width  = outer.clientWidth+'px';
-  smallCanvas.style.height = outer.clientHeight+'px';
+  if(!activePin||!smallCanvas)return;
+  const outer=el('small-outer');if(!outer)return;
+  smallCanvas.style.width=outer.clientWidth+'px';smallCanvas.style.height=outer.clientHeight+'px';
   const candles=getCandles(activePin,activeTF);
-  if(crossfade){
-    crossFadeCanvas(smallCanvas, candles, {modal:false});
-  } else {
-    const res=drawCandles(smallCanvas, candles, {modal:false});
-    if(res){
-      const {last,first}=res;
-      const pct=((last.c-first.o)/first.o*100), d=dp(last.c);
-      const pe=el('c-price'), ce=el('c-chg');
-      if(pe) pe.textContent=last.c.toFixed(d);
-      if(ce){ ce.textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%'; ce.style.color=pct>=0?'var(--green)':'var(--red)'; }
+  if(crossfade){crossFadeCanvas(smallCanvas,candles,{modal:false});}
+  else{
+    const res=drawCandles(smallCanvas,candles,{modal:false});
+    if(res){const{last,first}=res,pct=((last.c-first.o)/first.o*100),d=dp(last.c);
+      const pe=el('c-price'),ce=el('c-chg');
+      if(pe)pe.textContent=last.c.toFixed(d);
+      if(ce){ce.textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';ce.style.color=pct>=0?'var(--green)':'var(--red)';}
     }
   }
 }
 
-/* ─── MODAL ───────────────────────────────────── */
-let modalSym=null, modalTF='1m';
-function openModal(sym){
-  modalSym=sym; modalTF=activeTF;
-  el('modal-overlay').classList.add('open');
-  buildModalStats(sym); buildModalTFBar(); redrawModal(); buildModalSidebar(sym);
-}
-function closeModal(){
-  el('modal-overlay').classList.remove('open');
-  modalSym=null;
-}
-el('modal-close').addEventListener('click', closeModal);
-el('modal-overlay').addEventListener('click', e=>{ if(e.target===el('modal-overlay')) closeModal(); });
+let modalSym=null,modalTF='1m';
+function openModal(sym){modalSym=sym;modalTF=activeTF;el('modal-overlay').classList.add('open');buildModalStats(sym);buildModalTFBar();redrawModal();buildModalSidebar(sym);}
+function closeModal(){el('modal-overlay').classList.remove('open');modalSym=null;}
+el('modal-close').addEventListener('click',closeModal);
+el('modal-overlay').addEventListener('click',e=>{if(e.target===el('modal-overlay'))closeModal();});
 
 function redrawModal(crossfade=false){
-  if(!modalSym) return;
-  const canvas=el('modal-canvas'); if(!canvas) return;
-  const wrap=el('modal-chart-wrap'); if(!wrap) return;
-  canvas.style.width  = wrap.clientWidth+'px';
-  canvas.style.height = wrap.clientHeight+'px';
-  if(crossfade){
-    crossFadeCanvas(canvas, getCandles(modalSym,modalTF), {modal:true, sym:modalSym});
-  } else {
-    drawCandles(canvas, getCandles(modalSym,modalTF), {modal:true, sym:modalSym});
-  }
+  if(!modalSym)return;
+  const canvas=el('modal-canvas');if(!canvas)return;
+  const wrap=el('modal-chart-wrap');if(!wrap)return;
+  canvas.style.width=wrap.clientWidth+'px';canvas.style.height=wrap.clientHeight+'px';
+  if(crossfade)crossFadeCanvas(canvas,getCandles(modalSym,modalTF),{modal:true,sym:modalSym});
+  else drawCandles(canvas,getCandles(modalSym,modalTF),{modal:true,sym:modalSym});
 }
-
 function buildModalTFBar(){
-  const bar=el('modal-tf-bar'); bar.innerHTML='';
-  TFS.forEach(tf=>{
-    const b=document.createElement('button'); b.className='modal-tf-btn'+(tf===modalTF?' on':''); b.textContent=tf;
-    b.addEventListener('click',()=>{ modalTF=tf; buildModalTFBar(); redrawModal(); buildModalSidebar(modalSym); }); bar.appendChild(b);
-  });
+  const bar=el('modal-tf-bar');bar.innerHTML='';
+  TFS.forEach(tf=>{const b=document.createElement('button');b.className='modal-tf-btn'+(tf===modalTF?' on':'');b.textContent=tf;b.addEventListener('click',()=>{modalTF=tf;buildModalTFBar();redrawModal();buildModalSidebar(modalSym);});bar.appendChild(b);});
 }
-
 function buildModalStats(sym){
-  const m=symMeta[sym]; if(!m) return;
-  const tv=tickerVals.find(t=>t.sym===sym);
-  const price=tv?tv.val:0, chg=tv?tv.chg:0;
-  const pct=(chg/price*100).toFixed(2);
-  const d=dp(price), chgCol=chg>=0?'var(--green)':'var(--red)';
+  const m=symMeta[sym];if(!m)return;
+  const tv=tickerVals.find(t=>t.sym===sym),price=tv?tv.val:0,chg=tv?tv.chg:0;
+  const pct=(chg/price*100).toFixed(2),d=dp(price),chgCol=chg>=0?'var(--green)':'var(--red)';
   const tinfo=TICKERS.find(t=>t.sym===sym);
   el('modal-title').textContent=sym+(tinfo?' · '+tinfo.name:'');
-  const w52r=m.w52Hi-m.w52Lo;
-  const pos=w52r>0?Math.min(100,Math.max(0,((price-m.w52Lo)/w52r*100))).toFixed(1):50;
+  const w52r=m.w52Hi-m.w52Lo,pos=w52r>0?Math.min(100,Math.max(0,((price-m.w52Lo)/w52r*100))).toFixed(1):50;
   el('modal-stats').innerHTML=`
-    <div class="modal-stat">
-      <span class="ms-label">Last Price</span>
-      <span class="ms-val" style="color:var(--white);font-size:22px;">${price.toFixed(d)}</span>
-      <span class="ms-sub" style="color:${chgCol}">${chg>=0?'+':''}${chg.toFixed(2)} (${chg>=0?'+':''}${pct}%)</span>
-    </div>
-    <div class="modal-stat">
-      <span class="ms-label">Day Open</span>
-      <span class="ms-val" style="color:var(--muted)">${fmt(m.open,d)}</span>
-    </div>
-    <div class="modal-stat">
-      <span class="ms-label">Day High</span>
-      <span class="ms-val" style="color:var(--green)">${fmt(m.dayHi,d)}</span>
-    </div>
-    <div class="modal-stat">
-      <span class="ms-label">Day Low</span>
-      <span class="ms-val" style="color:var(--red)">${fmt(m.dayLo,d)}</span>
-    </div>
+    <div class="modal-stat"><span class="ms-label">Last Price</span><span class="ms-val" style="color:var(--white);font-size:22px;">${price.toFixed(d)}</span><span class="ms-sub" style="color:${chgCol}">${chg>=0?'+':''}${chg.toFixed(2)} (${chg>=0?'+':''}${pct}%)</span></div>
+    <div class="modal-stat"><span class="ms-label">Day Open</span><span class="ms-val" style="color:var(--muted)">${fmt(m.open,d)}</span></div>
+    <div class="modal-stat"><span class="ms-label">Day High</span><span class="ms-val" style="color:var(--green)">${fmt(m.dayHi,d)}</span></div>
+    <div class="modal-stat"><span class="ms-label">Day Low</span><span class="ms-val" style="color:var(--red)">${fmt(m.dayLo,d)}</span></div>
     <div class="range-wrap">
       <span class="ms-label">52-Week Range</span>
       <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
@@ -1064,27 +790,16 @@ function buildModalStats(sym){
       <div class="range-track"><div class="range-fill"></div><div class="range-cursor" style="left:${pos}%;"></div></div>
       <div class="range-labels"><span>52W LOW</span><span>NOW ${pos}%</span><span>52W HIGH</span></div>
     </div>
-    <div class="modal-stat">
-      <span class="ms-label">Volume</span>
-      <span class="ms-val" style="color:var(--cyan)">${m.vol}</span>
-      <span class="ms-sub">avg ${m.avgVol}</span>
-    </div>
-    <div class="modal-stat">
-      <span class="ms-label">Mkt Cap</span>
-      <span class="ms-val" style="color:var(--amber)">${m.mktCap}</span>
-    </div>`;
+    <div class="modal-stat"><span class="ms-label">Volume</span><span class="ms-val" style="color:var(--cyan)">${m.vol}</span><span class="ms-sub">avg ${m.avgVol}</span></div>
+    <div class="modal-stat"><span class="ms-label">Mkt Cap</span><span class="ms-val" style="color:var(--amber)">${m.mktCap}</span></div>`;
 }
-
 function buildModalSidebar(sym){
-  const m=symMeta[sym]; if(!m) return;
-  const tv=tickerVals.find(t=>t.sym===sym);
-  const price=tv?tv.val:0, chg=tv?tv.chg:0, d=dp(price);
-  const chgPct=(chg/price*100), candles=getCandles(sym,modalTF);
-  const last=candles[candles.length-1], first=candles[0];
-  const sessP=((last.c-first.o)/first.o*100);
+  const m=symMeta[sym];if(!m)return;
+  const tv=tickerVals.find(t=>t.sym===sym),price=tv?tv.val:0,chg=tv?tv.chg:0,d=dp(price);
+  const chgPct=(chg/price*100),candles=getCandles(sym,modalTF);
+  const last=candles[candles.length-1],first=candles[0],sessP=((last.c-first.o)/first.o*100);
   el('modal-sidebar').innerHTML=`
-    <div class="sb-section">
-      <div class="sb-title">Price Details</div>
+    <div class="sb-section"><div class="sb-title">Price Details</div>
       <div class="sb-row"><span class="sb-key">Last</span><span class="sb-val" style="color:var(--white)">${price.toFixed(d)}</span></div>
       <div class="sb-row"><span class="sb-key">Open</span><span class="sb-val" style="color:var(--muted)">${fmt(m.open,d)}</span></div>
       <div class="sb-row"><span class="sb-key">Day High</span><span class="sb-val" style="color:var(--green)">${fmt(m.dayHi,d)}</span></div>
@@ -1092,21 +807,18 @@ function buildModalSidebar(sym){
       <div class="sb-row"><span class="sb-key">Change</span><span class="sb-val" style="color:${chg>=0?'var(--green)':'var(--red)'}">${chg>=0?'+':''}${chg.toFixed(2)}</span></div>
       <div class="sb-row"><span class="sb-key">Chg %</span><span class="sb-val" style="color:${chg>=0?'var(--green)':'var(--red)'}">${chg>=0?'+':''}${chgPct.toFixed(2)}%</span></div>
     </div>
-    <div class="sb-section">
-      <div class="sb-title">52-Week</div>
+    <div class="sb-section"><div class="sb-title">52-Week</div>
       <div class="sb-row"><span class="sb-key">High</span><span class="sb-val" style="color:var(--green)">${fmt(m.w52Hi,d)}</span></div>
       <div class="sb-row"><span class="sb-key">Low</span><span class="sb-val" style="color:var(--red)">${fmt(m.w52Lo,d)}</span></div>
       <div class="sb-row"><span class="sb-key">Range</span><span class="sb-val" style="color:var(--muted)">${fmt(m.w52Hi-m.w52Lo,d)}</span></div>
     </div>
-    <div class="sb-section">
-      <div class="sb-title">Session</div>
+    <div class="sb-section"><div class="sb-title">Session</div>
       <div class="sb-row"><span class="sb-key">Perf</span><span class="sb-val" style="color:${sessP>=0?'var(--green)':'var(--red)'}">${sessP>=0?'+':''}${sessP.toFixed(2)}%</span></div>
       <div class="sb-row"><span class="sb-key">Volume</span><span class="sb-val" style="color:var(--cyan)">${m.vol}</span></div>
       <div class="sb-row"><span class="sb-key">Avg Vol</span><span class="sb-val" style="color:var(--muted)">${m.avgVol}</span></div>
       <div class="sb-row"><span class="sb-key">Mkt Cap</span><span class="sb-val" style="color:var(--amber)">${m.mktCap}</span></div>
     </div>
-    <div class="sb-section">
-      <div class="sb-title">Last Candle</div>
+    <div class="sb-section"><div class="sb-title">Last Candle</div>
       <div class="sb-row"><span class="sb-key">Open</span><span class="sb-val">${fmt(last.o,d)}</span></div>
       <div class="sb-row"><span class="sb-key">High</span><span class="sb-val" style="color:var(--green)">${fmt(last.h,d)}</span></div>
       <div class="sb-row"><span class="sb-key">Low</span><span class="sb-val" style="color:var(--red)">${fmt(last.l,d)}</span></div>
@@ -1115,15 +827,14 @@ function buildModalSidebar(sym){
     </div>`;
 }
 
-/* ─── LIVE UPDATE LOOP ────────────────────────── */
 setInterval(()=>{
   pinnedSyms.forEach(sym=>TFS.forEach(tf=>pushCandle(sym,tf)));
   redrawSmall();
-  if(modalSym){ redrawModal(); buildModalStats(modalSym); buildModalSidebar(modalSym); }
-}, 1500);
-window.addEventListener('resize', ()=>{ redrawSmall(); redrawModal(); });
+  if(modalSym){redrawModal();buildModalStats(modalSym);buildModalSidebar(modalSym);}
+},1500);
+window.addEventListener('resize',()=>{redrawSmall();redrawModal();renderOrderBook();});
 
-/* ─── VOLUME CHART ────────────────────────────── */
+/* ─── VOLUME CHART ── */
 const volLabels=Array.from({length:16},(_,i)=>(9+Math.floor(i*0.9375))+':00');
 const volData=volLabels.map(()=>rand(100,900,0));
 const volChart=new Chart(el('volChart').getContext('2d'),{
@@ -1132,8 +843,12 @@ const volChart=new Chart(el('volChart').getContext('2d'),{
     backgroundColor:volData.map(v=>v>700?'rgba(196,127,0,.75)':v>500?'rgba(0,153,168,.65)':'rgba(0,192,96,.45)'),
     borderWidth:0,borderRadius:1}]},
   options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},
-    plugins:{legend:{display:false},tooltip:{backgroundColor:getComputedStyle(document.body).getPropertyValue('--bg2').trim()||'#f4f4f4',borderColor:getComputedStyle(document.body).getPropertyValue('--border').trim()||'#d0d0d0',borderWidth:1,
-      titleColor:getComputedStyle(document.body).getPropertyValue('--muted').trim()||'#555555',bodyColor:getComputedStyle(document.body).getPropertyValue('--white').trim()||'#1a1a1a',
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:getComputedStyle(document.body).getPropertyValue('--bg2').trim()||'#f4f4f4',
+      borderColor:getComputedStyle(document.body).getPropertyValue('--border').trim()||'#d0d0d0',
+      borderWidth:1,
+      titleColor:getComputedStyle(document.body).getPropertyValue('--muted').trim()||'#555555',
+      bodyColor:getComputedStyle(document.body).getPropertyValue('--white').trim()||'#1a1a1a',
       callbacks:{label:c=>' '+c.parsed.y+'K lots'}}},
     scales:{x:{ticks:{color:'#555555',font:{size:8},maxRotation:0},grid:{display:false},border:{display:false}},y:{display:false}}}
 });
@@ -1144,71 +859,82 @@ setInterval(()=>{
   volChart.update('none');
 },2500);
 
-/* ─── ORDER BOOK ──────────────────────────────── */
-let midPrice=5210;
-function renderOrderBook(){
-  const mx=2200;
+/* ─── ORDER BOOK — dynamic row count ── */
+let midPrice = 5210;
+const OB_ROW_H  = 24;   /* must match CSS height */
+const OB_HEAD_H = 22;   /* header height */
+const OB_MX     = 2200;
+
+function obRowCount() {
+  const bidsEl = el('bids');
+  if (!bidsEl || !bidsEl.parentElement) return 14;
+  const containerH = bidsEl.parentElement.clientHeight || 241;
+  return Math.max(8, Math.floor((containerH - OB_HEAD_H) / OB_ROW_H));
+}
+
+function renderOrderBook() {
+  const rows = obRowCount(), mx = OB_MX;
   /* Bid: SIZE left (outside) · PRICE right (toward center) */
-  let bH=`<div class="ob-header" style="display:flex;justify-content:space-between"><span>size</span><span>bid</span></div>`;
+  let bH = `<div class="ob-header" style="display:flex;justify-content:space-between"><span>size</span><span>bid</span></div>`;
   /* Ask: PRICE left (toward center) · SIZE right (outside) */
-  let aH=`<div class="ob-header" style="display:flex;justify-content:space-between"><span>ask</span><span>size</span></div>`;
-  for(let i=0;i<8;i++){
-    const bp=(midPrice-0.25*(i+1)).toFixed(2), ap=(midPrice+0.25*(i+1)).toFixed(2);
-    const bs=rand(100,2200,0), as=rand(100,2200,0);
-    bH+=`<div class="ob-row bid" style="justify-content:space-between">
+  let aH = `<div class="ob-header" style="display:flex;justify-content:space-between"><span>ask</span><span>size</span></div>`;
+  for (let i = 0; i < rows; i++) {
+    const bp = (midPrice - 0.25*(i+1)).toFixed(2);
+    const ap = (midPrice + 0.25*(i+1)).toFixed(2);
+    const bs = rand(100, mx, 0), as = rand(100, mx, 0);
+    bH += `<div class="ob-row bid">
       <span class="ob-row-bg" style="width:${(bs/mx*100).toFixed(0)}%"></span>
       <span class="ob-size ob-size-bid">${bs}</span>
       <span class="ob-price-bid">${bp}</span>
     </div>`;
-    aH+=`<div class="ob-row ask" style="justify-content:space-between">
+    aH += `<div class="ob-row ask">
       <span class="ob-row-bg" style="width:${(as/mx*100).toFixed(0)}%"></span>
       <span class="ob-price-ask">${ap}</span>
       <span class="ob-size ob-size-ask">${as}</span>
     </div>`;
   }
-  el('bids').innerHTML=bH; el('asks').innerHTML=aH;
-  el('ob-mid').textContent=midPrice.toFixed(2);
-  el('ob-spread').textContent='spd '+rand(0.1,0.6,1);
-  midPrice+=(Math.random()-0.49)*0.6; midPrice=+midPrice.toFixed(2);
+  el('bids').innerHTML = bH; el('asks').innerHTML = aH;
+  el('ob-mid').textContent    = midPrice.toFixed(2);
+  el('ob-spread').textContent = 'spd ' + rand(0.1, 0.6, 1);
+  midPrice += (Math.random() - 0.49) * 0.6;
+  midPrice  = +midPrice.toFixed(2);
 }
-renderOrderBook(); setInterval(renderOrderBook,2000);
+renderOrderBook();
+setInterval(renderOrderBook, 2000);
 
-/* ─── TRADE FLOW ──────────────────────────────── */
+/* ─── TRADE FLOW ── */
 const flowSyms=['SPX','NDQ','AAPL','NVDA','TSLA','AMZN','META','MSFT','GLD','BTC'];
-let flowAnomCount=0, largePrintCount=0;
+let flowAnomCount=0,largePrintCount=0;
 function addFlowRow(){
-  const ts=new Date().toUTCString().slice(17,25), sym=pick(flowSyms);
-  const side=Math.random()>0.45?'buy':'sell', size=rand(100,5000,0);
+  const ts=new Date().toUTCString().slice(17,25),sym=pick(flowSyms);
+  const side=Math.random()>0.45?'buy':'sell',size=rand(100,5000,0);
   const price=(5100+Math.random()*220).toFixed(2);
-  const isLarge=size>3000, isAnom=Math.random()<0.05;
-  if(isLarge)largePrintCount++; if(isAnom)flowAnomCount++;
-  const row=document.createElement('div'); row.className='flow-row';
+  const isLarge=size>3000,isAnom=Math.random()<0.05;
+  if(isLarge)largePrintCount++;if(isAnom)flowAnomCount++;
+  const row=document.createElement('div');row.className='flow-row';
   row.innerHTML=`<span class="flow-time">${ts}</span><span class="flow-sym ${side==='buy'?'up':'dn'}">${sym}</span><span class="flow-side ${side}">${side.toUpperCase()}</span><span class="flow-size">${size.toLocaleString()}</span><span class="flow-price">${price}</span><span class="flow-flag ${isAnom?'anomaly':''}">${isLarge?'◈ BLOCK':isAnom?'⚠ ANOM':''}</span>`;
-  const log=el('flow-log'); log.insertBefore(row,log.firstChild);
-  while(log.children.length>16) log.removeChild(log.lastChild);
+  const log=el('flow-log');log.insertBefore(row,log.firstChild);
+  while(log.children.length>16)log.removeChild(log.lastChild);
   el('s-vol').textContent=(3.42+Math.random()*0.12).toFixed(2)+'B';
-  el('s-prints').textContent=largePrintCount; el('s-anomalies').textContent=flowAnomCount;
-  el('s-last').textContent=sym+' '+side.toUpperCase(); el('s-adv').textContent=rand(1.2,3.2,1)+'×';
-  if(isAnom) triggerAnomaly(sym); updateSpark();
+  el('s-prints').textContent=largePrintCount;el('s-anomalies').textContent=flowAnomCount;
+  el('s-last').textContent=sym+' '+side.toUpperCase();el('s-adv').textContent=rand(1.2,3.2,1)+'×';
+  if(isAnom)triggerAnomaly(sym);updateSpark();
 }
 setInterval(addFlowRow,1100);
 
-/* ─── SPARK ───────────────────────────────────── */
 const sparkData=Array(14).fill(50);
 function updateSpark(){
-  sparkData.push(rand(20,80,0)); if(sparkData.length>14) sparkData.shift();
+  sparkData.push(rand(20,80,0));if(sparkData.length>14)sparkData.shift();
   el('spark').innerHTML=sparkData.map(v=>`<div class="spark-bar" style="height:${v}%;background:${v>65?'var(--amber)':'var(--green)'}"></div>`).join('');
 }
 updateSpark();
 
-/* ─── METRICS ─────────────────────────────────── */
 setInterval(()=>{
   const vix=rand(17,29,1),flow=rand(0.8,2.4,2),dep=rand(600,1200,0),sprd=rand(0.3,2.0,1);
-  el('m-vix').textContent=vix; el('m-vix').className='metric-value '+(vix>24?'dn':vix<20?'up':'flat');
-  el('m-flow').textContent=flow; el('m-depth').textContent=dep+'K'; el('m-spread').textContent=sprd;
+  el('m-vix').textContent=vix;el('m-vix').className='metric-value '+(vix>24?'dn':vix<20?'up':'flat');
+  el('m-flow').textContent=flow;el('m-depth').textContent=dep+'K';el('m-spread').textContent=sprd;
 },4000);
 
-/* ─── ALERTS ──────────────────────────────────── */
 const anomMsgs=[
   s=>`Unusual size print: ${s} — potential block accumulation`,
   s=>`${s} diverging from index — momentum shift`,
@@ -1216,79 +942,59 @@ const anomMsgs=[
   s=>`${s} bid stacking anomaly — iceberg suspected`,
 ];
 const sigTpls=[
-  {type:'warn', icon:'!',text:s=>`Volume surge: ${s} +3σ above 15m avg`},
-  {type:'info', icon:'↑',text:s=>`${s} momentum building — 5m RSI > 70`},
+  {type:'warn',icon:'!',text:s=>`Volume surge: ${s} +3σ above 15m avg`},
+  {type:'info',icon:'↑',text:s=>`${s} momentum building — 5m RSI > 70`},
   {type:'alert',icon:'▲',text:s=>`${s} prints outside expected range`},
-  {type:'warn', icon:'~',text:s=>`Spread widening on ${s} — liquidity watch`},
-  {type:'info', icon:'◈',text:s=>`Block print confirmed: ${s} > 2500 lots`},
+  {type:'warn',icon:'~',text:s=>`Spread widening on ${s} — liquidity watch`},
+  {type:'info',icon:'◈',text:s=>`Block print confirmed: ${s} > 2500 lots`},
 ];
-let signalCount=0, alertVisible=false;
+let signalCount=0,alertVisible=false;
 function triggerAnomaly(sym){
-  if(alertVisible) return;
+  if(alertVisible)return;
   el('alert-msg').textContent=pick(anomMsgs)(sym);
-  el('alert-banner').classList.add('visible'); alertVisible=true;
-  setTimeout(()=>{el('alert-banner').classList.remove('visible'); alertVisible=false;},5500);
+  el('alert-banner').classList.add('visible');alertVisible=true;
+  setTimeout(()=>{el('alert-banner').classList.remove('visible');alertVisible=false;},5500);
   addSignal(sym);
 }
-el('alert-dismiss').addEventListener('click',()=>{el('alert-banner').classList.remove('visible'); alertVisible=false;});
+el('alert-dismiss').addEventListener('click',()=>{el('alert-banner').classList.remove('visible');alertVisible=false;});
 function addSignal(sym){
-  const tpl=pick(sigTpls); signalCount++;
+  const tpl=pick(sigTpls);signalCount++;
   el('signal-count').textContent=signalCount+' signal'+(signalCount!==1?'s':'');
-  const row=document.createElement('div'); row.className='signal-row';
+  const row=document.createElement('div');row.className='signal-row';
   row.innerHTML=`<div class="signal-icon ${tpl.type}">${tpl.icon}</div><div class="signal-text">${tpl.text(sym)}</div><div class="signal-age">${new Date().toUTCString().slice(17,25)}</div>`;
-  const list=el('signal-list'); list.insertBefore(row,list.firstChild);
-  while(list.children.length>7) list.removeChild(list.lastChild);
+  const list=el('signal-list');list.insertBefore(row,list.firstChild);
+  while(list.children.length>7)list.removeChild(list.lastChild);
 }
-setInterval(()=>{ if(Math.random()<0.15) addSignal(pick(flowSyms)); },8000);
+setInterval(()=>{if(Math.random()<0.15)addSignal(pick(flowSyms));},8000);
 
-/* ─── INIT ────────────────────────────────────── */
 renderSmallPanel();
 
-/* ── CANVAS THEME FADE ────────────────────────── */
-/*
-  Pure CSS opacity transition on the canvas element.
-  - Fade out (opacity 0) in 100ms
-  - Redraw with new theme at opacity 0 (invisible, zero jank)
-  - Fade back in (opacity 1) in 160ms
-  Zero JS per frame. GPU-only compositing.
-*/
-function crossFadeCanvas(canvas, candles, opts={}) {
-  if (!canvas) return;
-  canvas.style.transition = 'opacity 100ms ease-out';
-  canvas.style.opacity    = '0';
-  setTimeout(() => {
-    drawCandles(canvas, candles, opts);
-    canvas.style.transition = 'opacity 160ms ease-in';
-    canvas.style.opacity    = '1';
-    setTimeout(() => { canvas.style.transition = ''; }, 180);
-  }, 105);
+/* ── CANVAS THEME FADE ── */
+function crossFadeCanvas(canvas,candles,opts={}) {
+  if(!canvas)return;
+  canvas.style.transition='opacity 100ms ease-out';
+  canvas.style.opacity='0';
+  setTimeout(()=>{
+    drawCandles(canvas,candles,opts);
+    canvas.style.transition='opacity 160ms ease-in';
+    canvas.style.opacity='1';
+    setTimeout(()=>{canvas.style.transition='';},180);
+  },105);
 }
 
-/* ── THEME TOGGLE ─────────────────────────────── */
-const themeToggle = document.getElementById('theme-toggle');
-let isDark = false;
-
-themeToggle.addEventListener('click', () => {
-  isDark = !isDark;
-
-  /* Enable CSS transitions on all non-canvas elements */
+/* ── THEME TOGGLE ── */
+const themeToggle=document.getElementById('theme-toggle');
+let isDark=false;
+themeToggle.addEventListener('click',()=>{
+  isDark=!isDark;
   document.body.classList.add('theme-transitioning');
-
-  /* Flip theme — CSS vars update instantly, transitions handle the rest */
-  document.body.classList.toggle('dark-theme', isDark);
-
-  /* Update icon */
-  themeToggle.textContent = isDark ? '🌙' : '☀️';
-  themeToggle.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
-
-  /* Crossfade canvases — starts immediately, runs in parallel with CSS transition */
+  document.body.classList.toggle('dark-theme',isDark);
+  themeToggle.textContent=isDark?'🌙':'☀️';
+  themeToggle.title=isDark?'Switch to Light Mode':'Switch to Dark Mode';
   redrawSmall(true);
-  if (modalSym) redrawModal(true);
-
-  /* Remove transitioning class after CSS animations complete */
-  setTimeout(() => document.body.classList.remove('theme-transitioning'), 280);
+  if(modalSym)redrawModal(true);
+  setTimeout(()=>document.body.classList.remove('theme-transitioning'),280);
 });
-
 </script>
 </body>
 </html>
