@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Zerodha — Market Operations Terminal</title>
+<title>OPSDSK — Market Operations Terminal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
@@ -533,7 +533,7 @@ function updateTicker() {
   });
   buildTicker();
 }
-setInterval(updateTicker, 3000);
+setInterval(updateTicker, 3500);
 
 /* ── PRICE CHART ─────────────────────────────────── */
 const priceLabels = [];
@@ -607,7 +607,7 @@ function updatePriceChart() {
   if (priceData.length > 90) { priceData.shift(); priceLabels.shift(); }
   priceChart.update('none');
 }
-setInterval(updatePriceChart, 800);
+setInterval(updatePriceChart, 1300);
 
 /* ── VOLUME CHART ────────────────────────────────── */
 const volLabels = Array.from({ length: 16 }, (_, i) => {
@@ -668,7 +668,7 @@ function updateVolChart() {
   );
   volChart.update('none');
 }
-setInterval(updateVolChart, 2000);
+setInterval(updateVolChart, 2500);
 
 /* ── ORDER BOOK ──────────────────────────────────── */
 let midPrice = 5210;
@@ -704,7 +704,7 @@ function renderOrderBook() {
   midPrice  = +midPrice.toFixed(2);
 }
 renderOrderBook();
-setInterval(renderOrderBook, 1500);
+setInterval(renderOrderBook, 2000);
 
 /* ── TRADE FLOW ──────────────────────────────────── */
 const flowSyms     = ['SPX','NDQ','AAPL','NVDA','TSLA','AMZN','META','MSFT','GLD','BTC'];
@@ -748,7 +748,7 @@ function addFlowRow() {
   if (isAnom) triggerAnomaly(sym);
   updateSpark();
 }
-setInterval(addFlowRow, 600);
+setInterval(addFlowRow, 1100);
 
 /* ── SPARK BAR ───────────────────────────────────── */
 const sparkData = Array(14).fill(50);
@@ -775,7 +775,7 @@ function updateMetrics() {
   $('m-depth').textContent  = dep + 'K';
   $('m-spread').textContent = sprd;
 }
-setInterval(updateMetrics, 3500);
+setInterval(updateMetrics, 4000);
 
 /* ── ANOMALY / ALERT SYSTEM ──────────────────────── */
 const anomalyMessages = [
