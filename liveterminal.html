@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Zerodha — Market Operations Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:        #080c0a;
+    --bg2:       #0d1410;
+    --bg3:       #111a15;
+    --green:     #00e87a;
+    --green2:    #00c060;
+    --green-dim: #1a4a2e;
+    --amber:     #f0a500;
+    --amber-dim: #3a2800;
+    --red:       #ff3d5a;
+    --red-dim:   #3a0010;
+    --cyan:      #00d4cc;
+    --white:     #d4e8dc;
+    --muted:     #4a7a5a;
+    --border:    #1a3025;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'IBM Plex Mono', 'Share Tech Mono', monospace;
+    font-size: 11px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── TOP BAR ──────────────────────────────────── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 14px;
+    height: 34px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-left  { display: flex; align-items: center; gap: 18px; }
+  .topbar-brand { color: var(--green); font-weight: 700; font-size: 13px; letter-spacing: 3px; }
+  .topbar-status { display: flex; gap: 10px; }
+
+  .status-pill {
+    font-size: 10px; color: var(--muted);
+    padding: 2px 7px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .status-pill .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  .status-pill .dot.amber { background: var(--amber); }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .topbar-right { display: flex; gap: 18px; align-items: center; }
+  .clock   { color: var(--green); font-size: 13px; font-weight: 500; letter-spacing: 1.5px; }
+  .session { color: var(--muted); font-size: 10px; }
+
+  /* ── TICKER BAR ───────────────────────────────── */
+  .ticker-bar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    height: 27px;
+    display: flex;
+    align-items: center;
+  }
+  .ticker-label {
+    color: var(--muted); font-size: 10px;
+    padding: 0 10px;
+    border-right: 1px solid var(--border);
+    white-space: nowrap;
+    min-width: 64px;
+    line-height: 27px;
+    flex-shrink: 0;
+  }
+  .ticker-track {
+    display: flex;
+    animation: scroll 45s linear infinite;
+    white-space: nowrap;
+  }
+  .ticker-item {
+    padding: 0 16px;
+    font-size: 11px;
+    border-right: 1px solid var(--border);
+    display: flex; align-items: center; gap: 7px;
+    height: 27px;
+  }
+  .ticker-sym  { color: var(--muted); font-size: 10px; }
+  .ticker-val  { font-weight: 500; }
+  .ticker-chg  { font-size: 10px; }
+  .up   { color: var(--green); }
+  .dn   { color: var(--red); }
+  .flat { color: var(--amber); }
+
+  @keyframes scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+  /* ── MAIN GRID ────────────────────────────────── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 284px;
+    grid-template-rows: 270px 270px;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── PANELS ───────────────────────────────────── */
+  .panel {
+    background: var(--bg);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 10px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    height: 29px;
+    flex-shrink: 0;
+  }
+  .panel-title { color: var(--muted); font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; }
+  .panel-badge {
+    font-size: 9px; padding: 1px 6px;
+    border-radius: 1px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .panel-badge.live { border-color: var(--green); color: var(--green); }
+  .panel-body  { flex: 1; overflow: hidden; padding: 8px; position: relative; }
+
+  /* right column spans two rows */
+  .right-col {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border);
+  }
+  .right-col .panel { flex: 1; }
+
+  /* ── ALERT BANNER ─────────────────────────────── */
+  .alert-banner {
+    display: none;
+    position: absolute; top: 29px; left: 0; right: 0; z-index: 20;
+    background: rgba(240,165,0,.10);
+    border-bottom: 1px solid var(--amber);
+    border-left: 3px solid var(--amber);
+    padding: 8px 12px;
+    font-size: 11px;
+    animation: slideDown .3s ease;
+  }
+  @keyframes slideDown { from{transform:translateY(-100%);opacity:0} to{transform:translateY(0);opacity:1} }
+  .alert-banner.visible { display: flex; align-items: center; gap: 10px; }
+  .alert-label   { color: var(--amber); font-weight: 700; font-size: 10px; letter-spacing: 1.5px; }
+  .alert-msg     { color: var(--white); }
+  .alert-dismiss { margin-left: auto; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; }
+  .alert-dismiss:hover { color: var(--white); }
+
+  /* ── ORDER BOOK ───────────────────────────────── */
+  .orderbook {
+    display: grid;
+    grid-template-columns: 1fr 68px 1fr;
+    height: 100%;
+    overflow: hidden;
+  }
+  .ob-col { overflow: hidden; }
+  .ob-header { color: var(--muted); font-size: 9px; padding: 2px 4px; margin-bottom: 5px; }
+  .ob-row {
+    display: flex; justify-content: space-between;
+    padding: 2px 4px; margin-bottom: 2px;
+    position: relative; overflow: hidden;
+  }
+  .ob-row-bg {
+    position: absolute; top: 0; height: 100%;
+    opacity: .15;
+    transition: width .5s ease;
+  }
+  .bid .ob-row-bg { background: var(--green); right: 0; left: auto; }
+  .ask .ob-row-bg { background: var(--red); left: 0; }
+  .ob-price-bid { color: var(--green); font-weight: 500; z-index: 1; position: relative; }
+  .ob-price-ask { color: var(--red);   font-weight: 500; z-index: 1; position: relative; }
+  .ob-size      { color: var(--muted); z-index: 1; position: relative; }
+  .ob-mid {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-left:  1px solid var(--border);
+    border-right: 1px solid var(--border);
+    padding: 4px;
+  }
+  .ob-mid-price  { color: var(--white); font-size: 14px; font-weight: 700; }
+  .ob-mid-spread { color: var(--muted); font-size: 9px; margin-top: 5px; }
+
+  /* ── TRADE FLOW ───────────────────────────────── */
+  .flow-log {
+    height: 100%; overflow: hidden;
+    display: flex; flex-direction: column;
+    font-size: 10px;
+  }
+  .flow-row {
+    display: flex; align-items: center; gap: 7px;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(26,48,37,.5);
+    animation: fadeIn .3s ease;
+    flex-shrink: 0;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+  .flow-time  { color: var(--muted); width: 48px; flex-shrink: 0; }
+  .flow-sym   { width: 40px; flex-shrink: 0; font-weight: 500; }
+  .flow-side  {
+    width: 30px; flex-shrink: 0;
+    font-size: 9px; padding: 1px 3px;
+    border-radius: 1px; text-align: center;
+  }
+  .flow-side.buy  { background: rgba(0,232,122,.12); color: var(--green); border: 1px solid var(--green-dim); }
+  .flow-side.sell { background: rgba(255,61,90,.12);  color: var(--red);   border: 1px solid var(--red-dim); }
+  .flow-size  { color: var(--white);  width: 54px; text-align: right; flex-shrink: 0; }
+  .flow-price { color: var(--amber);  width: 62px; text-align: right; flex-shrink: 0; }
+  .flow-flag  { margin-left: auto; font-size: 9px; color: var(--muted); }
+  .flow-flag.anomaly { color: var(--amber); }
+
+  /* ── SESSION METRICS ──────────────────────────── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    height: 100%;
+  }
+  .metric-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 8px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .metric-label { color: var(--muted); font-size: 9px; letter-spacing: .5px; }
+  .metric-value { font-size: 21px; font-weight: 700; line-height: 1; margin-top: 5px; }
+  .metric-sub   { font-size: 9px; margin-top: 3px; }
+
+  /* ── SIGNAL LOG ───────────────────────────────── */
+  .signal-list {
+    height: 100%; overflow: hidden;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .signal-row {
+    display: flex; align-items: center; gap: 7px;
+    padding: 5px 7px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    font-size: 10px;
+    animation: fadeIn .4s ease;
+  }
+  .signal-icon {
+    width: 18px; height: 18px;
+    border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; flex-shrink: 0;
+  }
+  .signal-icon.warn  { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); }
+  .signal-icon.info  { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+  .signal-icon.alert { background: var(--red-dim);   color: var(--red);   border: 1px solid var(--red); }
+  .signal-text { flex: 1; color: var(--white); }
+  .signal-age  { color: var(--muted); font-size: 9px; }
+
+  /* ── BOTTOM STRIP ─────────────────────────────── */
+  .bottom-strip {
+    display: flex;
+    height: 50px;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    align-items: center;
+    padding: 0 14px;
+    gap: 22px;
+    overflow: hidden;
+    flex-wrap: nowrap;
+  }
+  .stat-item { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+  .stat-label { color: var(--muted); font-size: 9px; letter-spacing: .5px; }
+  .stat-value { font-size: 12px; font-weight: 500; }
+  .stat-divider { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+
+  .spark { height: 30px; display: flex; align-items: flex-end; gap: 2px; }
+  .spark-bar { width: 4px; border-radius: 1px; opacity: .75; transition: height .5s ease; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-brand">OPSDSK</span>
+    <div class="topbar-status">
+      <div class="status-pill"><span class="dot"></span> LIVE FEED</div>
+      <div class="status-pill"><span class="dot amber"></span> ALGO MONITOR</div>
+      <div class="status-pill">SESSION 4</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="session">NYSE · LSE · HKEX</span>
+    <span class="clock" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<!-- TICKER BAR -->
+<div class="ticker-bar">
+  <div class="ticker-label">MARKETS</div>
+  <div style="overflow:hidden;flex:1;">
+    <div class="ticker-track" id="ticker-track"></div>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main-grid">
+
+  <!-- Panel 1 · Price chart -->
+  <div class="panel" style="position:relative;">
+    <div class="panel-header">
+      <span class="panel-title">SPX · PRICE ACTION</span>
+      <span class="panel-badge live">STREAMING</span>
+    </div>
+    <div class="alert-banner" id="alert-banner">
+      <span class="alert-label">SIGNAL</span>
+      <span class="alert-msg" id="alert-msg">Unusual volume detected on 2m candle</span>
+      <span class="alert-dismiss" id="alert-dismiss">×</span>
+    </div>
+    <div class="panel-body" style="padding:4px;">
+      <canvas id="priceChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Panel 2 · Order book -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">ORDER BOOK · L2</span>
+      <span class="panel-badge live">LIVE</span>
+    </div>
+    <div class="panel-body">
+      <div class="orderbook">
+        <div class="ob-col bid" id="bids"></div>
+        <div class="ob-mid">
+          <div class="ob-mid-price" id="ob-mid">—</div>
+          <div class="ob-mid-spread" id="ob-spread">spd —</div>
+        </div>
+        <div class="ob-col ask" id="asks"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column (spans 2 rows) -->
+  <div class="right-col">
+
+    <!-- Session metrics -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">SESSION METRICS</span>
+        <span class="panel-badge">ROLLING</span>
+      </div>
+      <div class="panel-body">
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">VOL INDEX</div>
+            <div class="metric-value up" id="m-vix">21.4</div>
+            <div class="metric-sub up" id="m-vix-sub">+1.2 today</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">FLOW RATIO</div>
+            <div class="metric-value" style="color:var(--cyan)" id="m-flow">1.34</div>
+            <div class="metric-sub flat">buy / sell</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">DEPTH</div>
+            <div class="metric-value" style="color:var(--amber)" id="m-depth">842K</div>
+            <div class="metric-sub" style="color:var(--muted)">avg lots</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">SPREAD bps</div>
+            <div class="metric-value up" id="m-spread">0.8</div>
+            <div class="metric-sub" style="color:var(--muted)">tight</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signal log -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">SIGNAL LOG</span>
+        <span class="panel-badge" id="signal-count">0 signals</span>
+      </div>
+      <div class="panel-body">
+        <div class="signal-list" id="signal-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Panel 3 · Trade flow -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TAPE · FLOW</span>
+      <span class="panel-badge live">LIVE</span>
+    </div>
+    <div class="panel-body" style="padding:4px 8px;">
+      <div class="flow-log" id="flow-log"></div>
+    </div>
+  </div>
+
+  <!-- Panel 4 · Volume profile -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">VOLUME PROFILE</span>
+      <span class="panel-badge">15m BINS</span>
+    </div>
+    <div class="panel-body" style="padding:4px;">
+      <canvas id="volChart"></canvas>
+    </div>
+  </div>
+
+</div><!-- /main-grid -->
+
+<!-- BOTTOM STRIP -->
+<div class="bottom-strip">
+  <div class="stat-item">
+    <span class="stat-label">SESSION VOL</span>
+    <span class="stat-value up" id="s-vol">3.42B</span>
+  </div>
+  <div class="stat-divider"></div>
+  <div class="stat-item">
+    <span class="stat-label">ADV RATIO</span>
+    <span class="stat-value" style="color:var(--cyan)" id="s-adv">2.1×</span>
+  </div>
+  <div class="stat-divider"></div>
+  <div class="stat-item">
+    <span class="stat-label">LARGE PRINTS</span>
+    <span class="stat-value flat" id="s-prints">0</span>
+  </div>
+  <div class="stat-divider"></div>
+  <div class="stat-item">
+    <span class="stat-label">ANOMALIES</span>
+    <span class="stat-value" style="color:var(--red)" id="s-anomalies">0</span>
+  </div>
+  <div class="stat-divider"></div>
+  <div class="stat-item">
+    <span class="stat-label">PULSE</span>
+    <div class="spark" id="spark"></div>
+  </div>
+  <div class="stat-divider"></div>
+  <div class="stat-item">
+    <span class="stat-label">LAST EVENT</span>
+    <span class="stat-value" style="color:var(--muted)" id="s-last">—</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ── HELPERS ─────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+function rand(a, b, d = 2) { return +((Math.random() * (b - a) + a).toFixed(d)); }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+/* ── CLOCK ───────────────────────────────────────── */
+function updateClock() {
+  const n = new Date();
+  $('clock').textContent = n.toUTCString().slice(17, 25) + ' UTC';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ── TICKER ──────────────────────────────────────── */
+const tickers = [
+  { sym: 'SPX',    base: 5210   },
+  { sym: 'NDX',    base: 18340  },
+  { sym: 'DXY',    base: 104.2  },
+  { sym: 'BTCUSD', base: 67800  },
+  { sym: 'GOLD',   base: 2384   },
+  { sym: 'WTI',    base: 78.4   },
+  { sym: 'EURUSD', base: 1.0842 },
+  { sym: 'VIX',    base: 21.4   },
+  { sym: 'TSLA',   base: 178.3  },
+  { sym: 'NVDA',   base: 880.5  },
+  { sym: 'AAPL',   base: 171.2  },
+  { sym: 'T10Y',   base: 4.28   },
+  { sym: 'BRL',    base: 5.02   },
+  { sym: 'HANG',   base: 17440  },
+  { sym: 'DAX',    base: 18120  },
+];
+let tickerValues = tickers.map(t => ({ ...t, val: t.base, chg: 0 }));
+
+function buildTicker() {
+  const track = $('ticker-track');
+  const decimals = t => t.base < 10 ? 4 : t.base < 200 ? 2 : 0;
+  const once = () => tickerValues.map(t => {
+    const dir = t.chg > 0 ? 'up' : t.chg < 0 ? 'dn' : 'flat';
+    const sym = t.chg > 0 ? '▲' : t.chg < 0 ? '▼' : '▸';
+    return `<div class="ticker-item">
+      <span class="ticker-sym">${t.sym}</span>
+      <span class="ticker-val ${dir}">${t.val.toFixed(decimals(t))}</span>
+      <span class="ticker-chg ${dir}">${sym}${Math.abs(t.chg).toFixed(2)}</span>
+    </div>`;
+  }).join('');
+  const html = once();
+  track.innerHTML = html + html;
+}
+buildTicker();
+
+function updateTicker() {
+  tickerValues = tickerValues.map(t => {
+    const delta = (Math.random() - 0.5) * t.base * 0.001;
+    const val   = +(t.val  + delta      ).toFixed(4);
+    const chg   = +(t.chg  + delta * 0.3).toFixed(2);
+    return { ...t, val, chg };
+  });
+  buildTicker();
+}
+setInterval(updateTicker, 3000);
+
+/* ── PRICE CHART ─────────────────────────────────── */
+const priceLabels = [];
+const priceData   = [];
+let   lastPrice   = 5210;
+
+for (let i = 80; i >= 0; i--) {
+  priceLabels.push('');
+  lastPrice += rand(-6, 6);
+  priceData.push(+lastPrice.toFixed(2));
+}
+
+const priceCtx = $('priceChart').getContext('2d');
+const priceChart = new Chart(priceCtx, {
+  type: 'line',
+  data: {
+    labels: priceLabels,
+    datasets: [{
+      data: priceData,
+      borderColor: '#00e87a',
+      borderWidth: 1.5,
+      pointRadius: 0,
+      tension: 0.3,
+      fill: true,
+      backgroundColor: ctx => {
+        const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
+        g.addColorStop(0, 'rgba(0,232,122,0.18)');
+        g.addColorStop(1, 'rgba(0,232,122,0)');
+        return g;
+      }
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 400 },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        mode: 'index', intersect: false,
+        backgroundColor: '#0d1410',
+        borderColor: '#1a3025', borderWidth: 1,
+        titleColor: '#4a7a5a', bodyColor: '#d4e8dc',
+        titleFont: { family: 'IBM Plex Mono', size: 10 },
+        bodyFont:  { family: 'IBM Plex Mono', size: 11 },
+        callbacks: { label: ctx => ' ' + ctx.parsed.y.toFixed(2) }
+      }
+    },
+    scales: {
+      x: { display: false },
+      y: {
+        position: 'right',
+        grid: { color: 'rgba(26,48,37,0.5)' },
+        ticks: {
+          color: '#4a7a5a',
+          font: { family: 'IBM Plex Mono', size: 9 },
+          maxTicksLimit: 6,
+          callback: v => v.toFixed(0)
+        },
+        border: { display: false }
+      }
+    }
+  }
+});
+
+function updatePriceChart() {
+  const change = (Math.random() - 0.48) * 9;
+  lastPrice = +(lastPrice + change).toFixed(2);
+  priceData.push(lastPrice);
+  priceLabels.push('');
+  if (priceData.length > 90) { priceData.shift(); priceLabels.shift(); }
+  priceChart.update('none');
+}
+setInterval(updatePriceChart, 800);
+
+/* ── VOLUME CHART ────────────────────────────────── */
+const volLabels = Array.from({ length: 16 }, (_, i) => {
+  const h = 9 + Math.floor(i * 0.9375);
+  return h + ':00';
+});
+const volData = volLabels.map(() => rand(100, 900, 0));
+
+const volCtx = $('volChart').getContext('2d');
+const volChart = new Chart(volCtx, {
+  type: 'bar',
+  data: {
+    labels: volLabels,
+    datasets: [{
+      data: volData,
+      backgroundColor: volData.map(v =>
+        v > 700 ? 'rgba(240,165,0,0.75)'
+        : v > 500 ? 'rgba(0,212,204,0.65)'
+        : 'rgba(0,232,122,0.45)'
+      ),
+      borderWidth: 0,
+      borderRadius: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 600 },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0d1410',
+        borderColor: '#1a3025', borderWidth: 1,
+        titleColor: '#4a7a5a', bodyColor: '#d4e8dc',
+        titleFont: { family: 'IBM Plex Mono', size: 9 },
+        bodyFont:  { family: 'IBM Plex Mono', size: 10 },
+        callbacks: { label: ctx => ' ' + ctx.parsed.y + 'K lots' }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: '#4a7a5a', font: { family: 'IBM Plex Mono', size: 8 }, maxRotation: 0 },
+        grid: { display: false },
+        border: { display: false }
+      },
+      y: { display: false }
+    }
+  }
+});
+
+function updateVolChart() {
+  const idx = Math.floor(Math.random() * volData.length);
+  volData[idx] = Math.max(50, Math.min(1000, volData[idx] + rand(-90, 130, 0)));
+  volChart.data.datasets[0].backgroundColor = volData.map(v =>
+    v > 700 ? 'rgba(240,165,0,0.75)'
+    : v > 500 ? 'rgba(0,212,204,0.65)'
+    : 'rgba(0,232,122,0.45)'
+  );
+  volChart.update('none');
+}
+setInterval(updateVolChart, 2000);
+
+/* ── ORDER BOOK ──────────────────────────────────── */
+let midPrice = 5210;
+
+function renderOrderBook() {
+  const levels = 8;
+  const maxSz  = 2200;
+  let bidHTML = `<div class="ob-header" style="text-align:right">size &nbsp; bid</div>`;
+  let askHTML = `<div class="ob-header">ask &nbsp; size</div>`;
+
+  for (let i = 0; i < levels; i++) {
+    const bp = (midPrice - 0.25 * (i + 1)).toFixed(2);
+    const ap = (midPrice + 0.25 * (i + 1)).toFixed(2);
+    const bs = rand(100, 2200, 0);
+    const as = rand(100, 2200, 0);
+    bidHTML += `<div class="ob-row bid" style="justify-content:flex-end">
+      <span class="ob-row-bg" style="width:${(bs / maxSz * 100).toFixed(0)}%"></span>
+      <span class="ob-size">${bs}</span>&nbsp;
+      <span class="ob-price-bid">${bp}</span>
+    </div>`;
+    askHTML += `<div class="ob-row ask">
+      <span class="ob-row-bg" style="width:${(as / maxSz * 100).toFixed(0)}%"></span>
+      <span class="ob-price-ask">${ap}</span>&nbsp;
+      <span class="ob-size">${as}</span>
+    </div>`;
+  }
+
+  $('bids').innerHTML        = bidHTML;
+  $('asks').innerHTML        = askHTML;
+  $('ob-mid').textContent    = midPrice.toFixed(2);
+  $('ob-spread').textContent = 'spd ' + rand(0.1, 0.6, 1);
+  midPrice += (Math.random() - 0.49) * 0.6;
+  midPrice  = +midPrice.toFixed(2);
+}
+renderOrderBook();
+setInterval(renderOrderBook, 1500);
+
+/* ── TRADE FLOW ──────────────────────────────────── */
+const flowSyms     = ['SPX','NDQ','AAPL','NVDA','TSLA','AMZN','META','MSFT','GLD','BTC'];
+let   flowAnomCount   = 0;
+let   largePrintCount = 0;
+
+function addFlowRow() {
+  const now   = new Date();
+  const ts    = now.toUTCString().slice(17, 25);
+  const sym   = pick(flowSyms);
+  const side  = Math.random() > 0.45 ? 'buy' : 'sell';
+  const size  = rand(100, 5000, 0);
+  const price = (5100 + Math.random() * 220).toFixed(2);
+  const isLarge = size > 3000;
+  const isAnom  = Math.random() < 0.05;
+
+  if (isLarge) largePrintCount++;
+  if (isAnom)  flowAnomCount++;
+
+  const row = document.createElement('div');
+  row.className = 'flow-row';
+  row.innerHTML = `
+    <span class="flow-time">${ts}</span>
+    <span class="flow-sym ${side === 'buy' ? 'up' : 'dn'}">${sym}</span>
+    <span class="flow-side ${side}">${side.toUpperCase()}</span>
+    <span class="flow-size">${size.toLocaleString()}</span>
+    <span class="flow-price">${price}</span>
+    <span class="flow-flag ${isAnom ? 'anomaly' : ''}">${isLarge ? '◈ BLOCK' : isAnom ? '⚠ ANOM' : ''}</span>
+  `;
+
+  const log = $('flow-log');
+  log.insertBefore(row, log.firstChild);
+  while (log.children.length > 16) log.removeChild(log.lastChild);
+
+  $('s-vol').textContent       = (3.42 + Math.random() * 0.12).toFixed(2) + 'B';
+  $('s-prints').textContent    = largePrintCount;
+  $('s-anomalies').textContent = flowAnomCount;
+  $('s-last').textContent      = sym + ' ' + side.toUpperCase();
+  $('s-adv').textContent       = rand(1.2, 3.2, 1) + '×';
+
+  if (isAnom) triggerAnomaly(sym);
+  updateSpark();
+}
+setInterval(addFlowRow, 600);
+
+/* ── SPARK BAR ───────────────────────────────────── */
+const sparkData = Array(14).fill(50);
+function updateSpark() {
+  sparkData.push(rand(20, 80, 0));
+  if (sparkData.length > 14) sparkData.shift();
+  const el = $('spark');
+  el.innerHTML = sparkData.map(v =>
+    `<div class="spark-bar" style="height:${v}%;background:${v > 65 ? 'var(--amber)' : 'var(--green)'}"></div>`
+  ).join('');
+}
+updateSpark();
+
+/* ── SESSION METRICS ─────────────────────────────── */
+function updateMetrics() {
+  const vix  = rand(17, 29, 1);
+  const flow = rand(0.8, 2.4, 2);
+  const dep  = rand(600, 1200, 0);
+  const sprd = rand(0.3, 2.0, 1);
+
+  $('m-vix').textContent    = vix;
+  $('m-vix').className      = 'metric-value ' + (vix > 24 ? 'dn' : vix < 20 ? 'up' : 'flat');
+  $('m-flow').textContent   = flow;
+  $('m-depth').textContent  = dep + 'K';
+  $('m-spread').textContent = sprd;
+}
+setInterval(updateMetrics, 3500);
+
+/* ── ANOMALY / ALERT SYSTEM ──────────────────────── */
+const anomalyMessages = [
+  sym => `Unusual size print: ${sym} — potential block accumulation`,
+  sym => `${sym} diverging from index — momentum shift`,
+  sym => `Sell-side depth thin — ${sym} level vulnerable`,
+  sym => `Cross-asset correlation break detected near ${sym}`,
+  sym => `Order imbalance spike: ${sym} — watch for reversal`,
+  sym => `${sym} bid stacking anomaly — iceberg suspected`,
+  sym => `${sym} vol surface skew widening unexpectedly`,
+];
+
+const signalTemplates = [
+  { type: 'warn',  icon: '!', text: sym => `Volume surge: ${sym} +3σ above 15m avg` },
+  { type: 'info',  icon: '↑', text: sym => `${sym} momentum building — 5m RSI > 70` },
+  { type: 'alert', icon: '▲', text: sym => `${sym} prints outside expected range` },
+  { type: 'warn',  icon: '~', text: sym => `Spread widening on ${sym} — liquidity watch` },
+  { type: 'info',  icon: '◈', text: sym => `Block print confirmed: ${sym} > 2500 lots` },
+  { type: 'alert', icon: '✕', text: sym => `${sym} aggressive market-sell detected` },
+];
+
+let signalCount  = 0;
+let alertVisible = false;
+
+function triggerAnomaly(sym) {
+  if (alertVisible) return;
+  const msg = pick(anomalyMessages)(sym);
+  $('alert-msg').textContent = msg;
+  const banner = $('alert-banner');
+  banner.classList.add('visible');
+  alertVisible = true;
+  setTimeout(() => { banner.classList.remove('visible'); alertVisible = false; }, 5500);
+  addSignal(sym);
+}
+
+$('alert-dismiss').addEventListener('click', () => {
+  $('alert-banner').classList.remove('visible');
+  alertVisible = false;
+});
+
+function addSignal(sym) {
+  const tpl = pick(signalTemplates);
+  signalCount++;
+  $('signal-count').textContent = signalCount + ' signal' + (signalCount !== 1 ? 's' : '');
+
+  const row = document.createElement('div');
+  row.className = 'signal-row';
+  const ts = new Date().toUTCString().slice(17, 25);
+  row.innerHTML = `
+    <div class="signal-icon ${tpl.type}">${tpl.icon}</div>
+    <div class="signal-text">${tpl.text(sym)}</div>
+    <div class="signal-age">${ts}</div>
+  `;
+  const list = $('signal-list');
+  list.insertBefore(row, list.firstChild);
+  while (list.children.length > 7) list.removeChild(list.lastChild);
+}
+
+/* Periodic background signals */
+setInterval(() => {
+  if (Math.random() < 0.15) addSignal(pick(flowSyms));
+}, 8000);
+</script>
+</body>
+</html>
