@@ -547,6 +547,7 @@
   </div>
 
 </div><!-- /main-grid -->
+  
 
 <!-- BOTTOM STRIP -->
 <div class="bottom-strip">
@@ -580,537 +581,587 @@
     <span class="stat-value" style="color:var(--muted)" id="s-last">—</span>
   </div>
 </div>
+  <!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">—</span>
+      <div class="modal-tf-bar" id="modal-tf-bar"></div>
+      <span class="modal-close" id="modal-close">×</span>
+    </div>
+    <div class="modal-stats" id="modal-stats"></div>
+    <div class="modal-body">
+      <div class="modal-chart-wrap" id="modal-chart-wrap">
+        <canvas id="modal-canvas" class="modal-canvas"></canvas>
+      </div>
+      <div class="modal-sidebar" id="modal-sidebar"></div>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-/* ── HELPERS ─────────────────────────────────────── */
-const $ = id => document.getElementById(id);
-function rand(a, b, d = 2) { return +((Math.random() * (b - a) + a).toFixed(d)); }
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-function lerp(a, b, t) { return a + (b - a) * t; }
-function ease(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+/* ─── UTILS ───────────────────────────────────── */
+const el   = id => document.getElementById(id);
+const rand = (a,b,d=2) => +((Math.random()*(b-a)+a).toFixed(d));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const fmt  = (v,d=2) => (+v).toFixed(d);
+const dp   = v => v<10?4 : v<200?2 : 0;
+const DPR  = () => window.devicePixelRatio || 1;
 
-/* ── CLOCK ───────────────────────────────────────── */
-function updateClock() {
-  const n = new Date();
-  $('clock').textContent = n.toUTCString().slice(17, 25) + ' UTC';
-}
-setInterval(updateClock, 1000);
-updateClock();
+/* ─── CLOCK ───────────────────────────────────── */
+setInterval(() => { el('clock').textContent = new Date().toUTCString().slice(17,25)+' UTC'; }, 1000);
+el('clock').textContent = new Date().toUTCString().slice(17,25)+' UTC';
 
-/* ── TICKER — updates text in-place, never resets scroll ── */
-const tickers = [
-  { sym: 'SPX',    base: 5210   },
-  { sym: 'NDX',    base: 18340  },
-  { sym: 'DXY',    base: 104.2  },
-  { sym: 'BTCUSD', base: 67800  },
-  { sym: 'GOLD',   base: 2384   },
-  { sym: 'WTI',    base: 78.4   },
-  { sym: 'EURUSD', base: 1.0842 },
-  { sym: 'VIX',    base: 21.4   },
-  { sym: 'TSLA',   base: 178.3  },
-  { sym: 'NVDA',   base: 880.5  },
-  { sym: 'AAPL',   base: 171.2  },
-  { sym: 'T10Y',   base: 4.28   },
-  { sym: 'BRL',    base: 5.02   },
-  { sym: 'HANG',   base: 17440  },
-  { sym: 'DAX',    base: 18120  },
+/* ─── TICKER DATA ─────────────────────────────── */
+const TICKERS = [
+  {sym:'SPX',   base:5210,   name:'S&P 500'},
+  {sym:'NDX',   base:18340,  name:'Nasdaq 100'},
+  {sym:'DXY',   base:104.2,  name:'US Dollar Index'},
+  {sym:'BTCUSD',base:67800,  name:'Bitcoin'},
+  {sym:'GOLD',  base:2384,   name:'Gold Futures'},
+  {sym:'WTI',   base:78.4,   name:'WTI Crude'},
+  {sym:'EURUSD',base:1.0842, name:'Euro / USD'},
+  {sym:'VIX',   base:21.4,   name:'Volatility Index'},
+  {sym:'TSLA',  base:178.3,  name:'Tesla Inc'},
+  {sym:'NVDA',  base:880.5,  name:'NVIDIA Corp'},
+  {sym:'AAPL',  base:171.2,  name:'Apple Inc'},
+  {sym:'T10Y',  base:4.28,   name:'10Y Treasury'},
+  {sym:'BRL',   base:5.02,   name:'Brazilian Real'},
+  {sym:'HANG',  base:17440,  name:'Hang Seng'},
+  {sym:'DAX',   base:18120,  name:'DAX Index'},
 ];
-let tickerValues = tickers.map(t => ({ ...t, val: t.base, chg: 0 }));
-const decimals = t => t.base < 10 ? 4 : t.base < 200 ? 2 : 0;
+let tickerVals = TICKERS.map(t => ({...t, val:t.base, chg:0}));
 
-function buildTickerDOM() {
-  const track = $('ticker-track');
-  const once = tickerValues.map((t, i) => {
-    const dir = t.chg > 0 ? 'up' : t.chg < 0 ? 'dn' : 'flat';
-    const arrow = t.chg > 0 ? '▲' : t.chg < 0 ? '▼' : '▸';
-    return `<div class="ticker-item" data-idx="${i}">
-      <span class="ticker-sym">${t.sym}</span>
-      <span class="ticker-val ${dir}">${t.val.toFixed(decimals(t))}</span>
-      <span class="ticker-chg ${dir}">${arrow}${Math.abs(t.chg).toFixed(2)}</span>
+const symMeta = {};
+TICKERS.forEach(t => {
+  const b = t.base;
+  symMeta[t.sym] = {
+    open:   +(b*(1+(Math.random()-0.5)*0.012)).toFixed(4),
+    dayHi:  +(b*1.015).toFixed(4),
+    dayLo:  +(b*0.985).toFixed(4),
+    w52Hi:  +(b*1.28).toFixed(4),
+    w52Lo:  +(b*0.71).toFixed(4),
+    vol:    rand(12,820,0)+'M',
+    avgVol: rand(80,600,0)+'M',
+    mktCap: b>1000 ? rand(1.2,3.8,2)+'T' : rand(200,900,0)+'B',
+  };
+});
+
+/* ─── PIN STATE ───────────────────────────────── */
+let pinnedSyms=[], activePin=null, activeTF='1m';
+const TFS = ['1m','5m','15m','1h'];
+
+/* ─── CANDLE STORE ────────────────────────────── */
+const candleStore = {};
+function getCandles(sym, tf) {
+  const key = sym+'_'+tf;
+  if (!candleStore[key]) {
+    const base  = TICKERS.find(t=>t.sym===sym)?.base || 100;
+    const count = tf==='1m'?60 : tf==='5m'?48 : tf==='15m'?36 : 28;
+    const arr=[]; let price=base;
+    for (let i=0;i<count;i++) {
+      const o=price, mv=base*0.009;
+      const h=o+rand(0,mv), l=o-rand(0,mv), c=l+rand(0,h-l);
+      arr.push({o,h,l,c,vol:rand(200,900,0)}); price=c;
+    }
+    const m=symMeta[sym];
+    if(m){ m.dayHi=Math.max(m.dayHi,...arr.map(c=>c.h)); m.dayLo=Math.min(m.dayLo,...arr.map(c=>c.l)); }
+    candleStore[key]=arr;
+  }
+  return candleStore[key];
+}
+function pushCandle(sym,tf) {
+  const arr=getCandles(sym,tf);
+  const base=TICKERS.find(t=>t.sym===sym)?.base||100;
+  const last=arr[arr.length-1], o=last.c, mv=base*0.009;
+  const h=o+rand(0,mv), l=o-rand(0,mv), c=l+rand(0,h-l);
+  arr.push({o,h,l,c,vol:rand(200,900,0)});
+  const max=tf==='1m'?60:tf==='5m'?48:tf==='15m'?36:28;
+  if(arr.length>max) arr.shift();
+  const m=symMeta[sym];
+  if(m){if(h>m.dayHi)m.dayHi=+h.toFixed(4);if(l<m.dayLo)m.dayLo=+l.toFixed(4);}
+}
+
+/* ═══════════════════════════════════════════════
+   NATIVE CANVAS CANDLESTICK RENDERER
+   ═══════════════════════════════════════════════ */
+function setupCanvas(canvas) {
+  const dpr = DPR();
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width  || canvas.parentElement.clientWidth;
+  const h = rect.height || canvas.parentElement.clientHeight;
+  canvas.width  = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  canvas.style.width  = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return {ctx, w, h};
+}
+
+function drawCandles(canvas, candles, opts={}) {
+  if (!canvas || !candles.length) return;
+  const {ctx, w, h} = setupCanvas(canvas);
+
+  const PAD_L  = opts.modal ? 12 : 8;
+  const PAD_R  = opts.modal ? 64 : 52;
+  const PAD_T  = opts.modal ? 28 : 24;
+  const PAD_B  = opts.modal ? 36 : 28;
+  const chartW = w - PAD_L - PAD_R;
+  const chartH = h - PAD_T - PAD_B;
+
+  let lo = Infinity, hi = -Infinity;
+  candles.forEach(c => { if(c.l<lo) lo=c.l; if(c.h>hi) hi=c.h; });
+  const pad = (hi-lo)*0.05 || lo*0.002;
+  lo -= pad; hi += pad;
+  const priceRange = hi - lo;
+  const toY = p => PAD_T + chartH - ((p-lo)/priceRange)*chartH;
+
+  ctx.fillStyle = '#080c0a';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.strokeStyle = 'rgba(26,48,37,0.7)';
+  ctx.lineWidth = 0.5;
+  const gridLines = opts.modal ? 6 : 4;
+  for (let i=0; i<=gridLines; i++) {
+    const y = PAD_T + (chartH/gridLines)*i;
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(PAD_L+chartW, y); ctx.stroke();
+  }
+
+  ctx.fillStyle = '#4a7a5a';
+  ctx.font = `${opts.modal?10:9}px 'IBM Plex Mono', monospace`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  for (let i=0; i<=gridLines; i++) {
+    const price = hi - (priceRange/gridLines)*i;
+    const y = PAD_T + (chartH/gridLines)*i;
+    ctx.fillText(price.toFixed(dp(price)), PAD_L+chartW+4, y);
+  }
+
+  if (opts.modal && opts.sym) {
+    const m = symMeta[opts.sym];
+    if (m) {
+      const lines = [
+        {val:m.dayHi, col:'rgba(0,232,122,0.65)',  label:'D-HI  '+fmt(m.dayHi, dp(m.dayHi))},
+        {val:m.dayLo, col:'rgba(255,61,90,0.65)',   label:'D-LO  '+fmt(m.dayLo, dp(m.dayLo))},
+        {val:m.w52Hi, col:'rgba(0,212,204,0.45)',   label:'52W-HI '+fmt(m.w52Hi, dp(m.w52Hi))},
+        {val:m.w52Lo, col:'rgba(240,165,0,0.45)',   label:'52W-LO '+fmt(m.w52Lo, dp(m.w52Lo))},
+      ];
+      lines.forEach(({val,col,label}) => {
+        if (val < lo || val > hi) return;
+        const y = toY(val);
+        ctx.save();
+        ctx.setLineDash([5,5]); ctx.strokeStyle=col; ctx.lineWidth=1.2;
+        ctx.beginPath(); ctx.moveTo(PAD_L,y); ctx.lineTo(PAD_L+chartW,y); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle=col; ctx.font="bold 10px 'IBM Plex Mono',monospace";
+        ctx.textAlign='left'; ctx.textBaseline='bottom';
+        ctx.fillText(label, PAD_L+6, y-2);
+        ctx.restore();
+      });
+    }
+  }
+
+  const n   = candles.length;
+  const slotW = chartW / n;
+  const maxBW = opts.modal ? 28 : 18;
+  const bodyW = Math.min(maxBW, Math.max(3, slotW * 0.65));
+
+  candles.forEach((c, i) => {
+    const xCenter = PAD_L + (i + 0.5) * slotW;
+    const oY = toY(c.o), hY = toY(c.h), lY = toY(c.l), cY = toY(c.c);
+    const bull = c.c >= c.o;
+    const col = bull ? '#00e87a' : '#ff3d5a';
+    ctx.strokeStyle = col;
+    ctx.lineWidth   = opts.modal ? 1.5 : 1.2;
+    ctx.beginPath(); ctx.moveTo(xCenter, hY); ctx.lineTo(xCenter, lY); ctx.stroke();
+    const bTop = Math.min(oY, cY);
+    const bH   = Math.max(opts.modal ? 2 : 1.5, Math.abs(cY - oY));
+    ctx.fillStyle = col;
+    ctx.fillRect(xCenter - bodyW/2, bTop, bodyW, bH);
+    if (bH > 4) {
+      ctx.strokeStyle = bull ? 'rgba(0,232,122,0.4)' : 'rgba(255,61,90,0.4)';
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(xCenter - bodyW/2, bTop, bodyW, bH);
+    }
+  });
+
+  const last = candles[candles.length-1];
+  const lastY = toY(last.c);
+  const bull = last.c >= last.o;
+  ctx.save();
+  ctx.setLineDash([3,3]);
+  ctx.strokeStyle = bull ? 'rgba(0,232,122,0.5)' : 'rgba(255,61,90,0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD_L, lastY); ctx.lineTo(PAD_L+chartW, lastY); ctx.stroke();
+  ctx.restore();
+
+  const tagX = PAD_L + chartW + 2;
+  const priceStr = last.c.toFixed(dp(last.c));
+  ctx.font = `bold ${opts.modal?11:10}px 'IBM Plex Mono',monospace`;
+  const tw = ctx.measureText(priceStr).width + 8;
+  ctx.fillStyle = bull ? '#00e87a' : '#ff3d5a';
+  ctx.fillRect(tagX, lastY - (opts.modal?9:8), tw, opts.modal?17:15);
+  ctx.fillStyle = '#080c0a';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(priceStr, tagX+4, lastY);
+
+  return {last, first:candles[0]};
+}
+
+/* ─── TICKER RENDER ───────────────────────────── */
+function renderTicker() {
+  const items = tickerVals.map(t => {
+    const d   = dp(t.base);
+    const dir = t.chg>0?'up':t.chg<0?'dn':'flat';
+    const arr = t.chg>0?'▲':t.chg<0?'▼':'▸';
+    const pin = pinnedSyms.includes(t.sym);
+    return `<div class="ticker-item${pin?' pinned':''}" data-sym="${t.sym}">
+      <span class="ticker-sym">${t.sym}${pin?' 📌':''}</span>
+      <span class="ticker-val ${dir}">${t.val.toFixed(d)}</span>
+      <span class="ticker-chg ${dir}">${arr}${Math.abs(t.chg).toFixed(2)}</span>
     </div>`;
   }).join('');
-  track.innerHTML = once + once;
-}
-buildTickerDOM();
-
-function updateTicker() {
-  tickerValues = tickerValues.map(t => {
-    const delta = (Math.random() - 0.5) * t.base * 0.0008;
-    return { ...t, val: +(t.val + delta).toFixed(4), chg: +(t.chg + delta * 0.3).toFixed(2) };
-  });
-  const items = $('ticker-track').querySelectorAll('.ticker-item');
-  items.forEach((item, i) => {
-    const t = tickerValues[i % tickerValues.length];
-    const dir = t.chg > 0 ? 'up' : t.chg < 0 ? 'dn' : 'flat';
-    const arrow = t.chg > 0 ? '▲' : t.chg < 0 ? '▼' : '▸';
-    const valEl = item.querySelector('.ticker-val');
-    const chgEl = item.querySelector('.ticker-chg');
-    valEl.textContent = t.val.toFixed(decimals(t));
-    valEl.className = `ticker-val ${dir}`;
-    chgEl.textContent = `${arrow}${Math.abs(t.chg).toFixed(2)}`;
-    chgEl.className = `ticker-chg ${dir}`;
-  });
-}
-setInterval(updateTicker, 3500);
-
-/* ── PRICE CHART — RAF-driven smooth streaming ── */
-const priceLabels = [];
-const priceData   = [];
-let   lastPrice   = 5210;
-let   targetPrice = 5210;
-let   displayPrice = 5210;
-let   priceAnimStart = null;
-let   priceAnimFrom = 5210;
-
-for (let i = 80; i >= 0; i--) {
-  priceLabels.push('');
-  lastPrice += rand(-5, 5);
-  priceData.push(+lastPrice.toFixed(2));
-}
-targetPrice = lastPrice;
-displayPrice = lastPrice;
-
-const priceCtx = $('priceChart').getContext('2d');
-const priceChart = new Chart(priceCtx, {
-  type: 'line',
-  data: {
-    labels: priceLabels,
-    datasets: [{
-      data: priceData,
-      borderColor: '#00e87a',
-      borderWidth: 1.5,
-      pointRadius: 0,
-      tension: 0.4,
-      fill: true,
-      backgroundColor: ctx => {
-        const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
-        g.addColorStop(0, 'rgba(0,232,122,0.18)');
-        g.addColorStop(1, 'rgba(0,232,122,0)');
-        return g;
-      }
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        mode: 'index', intersect: false,
-        backgroundColor: '#0d1410',
-        borderColor: '#1a3025', borderWidth: 1,
-        titleColor: '#4a7a5a', bodyColor: '#d4e8dc',
-        titleFont: { family: 'IBM Plex Mono', size: 10 },
-        bodyFont:  { family: 'IBM Plex Mono', size: 11 },
-        callbacks: { label: ctx => ' ' + ctx.parsed.y.toFixed(2) }
-      }
-    },
-    scales: {
-      x: { display: false },
-      y: {
-        position: 'right',
-        grid: { color: 'rgba(26,48,37,0.6)' },
-        ticks: { color: '#4a7a5a', font: { family: 'IBM Plex Mono', size: 9 }, maxTicksLimit: 6, callback: v => v.toFixed(0) },
-        border: { display: false }
-      }
-    }
-  }
-});
-
-const PRICE_ANIM_MS = 900;
-function schedulePricePoint() {
-  const change = (Math.random() - 0.48) * 8;
-  targetPrice = +(lastPrice + change).toFixed(2);
-  lastPrice = targetPrice;
-  priceAnimFrom = priceData[priceData.length - 1];
-  priceAnimStart = null;
-
-  priceData.push(priceAnimFrom);
-  priceLabels.push('');
-  if (priceData.length > 90) { priceData.shift(); priceLabels.shift(); }
-
-  const last = priceData.length - 1;
-  function animFrame(ts) {
-    if (!priceAnimStart) priceAnimStart = ts;
-    const t = Math.min((ts - priceAnimStart) / PRICE_ANIM_MS, 1);
-    const eased = ease(t);
-    priceData[last] = +(lerp(priceAnimFrom, targetPrice, eased)).toFixed(2);
-    priceChart.update('none');
-    if (t < 1) requestAnimationFrame(animFrame);
-  }
-  requestAnimationFrame(animFrame);
-}
-setInterval(schedulePricePoint, 1300);
-
-/* ── VOLUME CHART — smooth eased bar updates ── */
-const volLabels = Array.from({ length: 16 }, (_, i) => (9 + Math.floor(i * 0.9375)) + ':00');
-const volData   = volLabels.map(() => rand(100, 900, 0));
-const volTargets = [...volData];
-
-const volCtx = $('volChart').getContext('2d');
-const volChart = new Chart(volCtx, {
-  type: 'bar',
-  data: {
-    labels: volLabels,
-    datasets: [{
-      data: [...volData],
-      backgroundColor: volData.map(v =>
-        v > 700 ? 'rgba(240,165,0,0.75)' : v > 500 ? 'rgba(0,212,204,0.65)' : 'rgba(0,232,122,0.45)'
-      ),
-      borderWidth: 0,
-      borderRadius: 2
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#0d1410', borderColor: '#1a3025', borderWidth: 1,
-        titleColor: '#4a7a5a', bodyColor: '#d4e8dc',
-        titleFont: { family: 'IBM Plex Mono', size: 9 },
-        bodyFont:  { family: 'IBM Plex Mono', size: 10 },
-        callbacks: { label: ctx => ' ' + Math.round(ctx.parsed.y) + 'K lots' }
-      }
-    },
-    scales: {
-      x: { ticks: { color: '#4a7a5a', font: { family: 'IBM Plex Mono', size: 8 }, maxRotation: 0 }, grid: { display: false }, border: { display: false } },
-      y: { display: false }
-    }
-  }
-});
-
-const volFromData = [...volData];
-let volAnimStart = null;
-const VOL_ANIM_MS = 700;
-
-function animateVol(ts) {
-  if (!volAnimStart) volAnimStart = ts;
-  const t = Math.min((ts - volAnimStart) / VOL_ANIM_MS, 1);
-  const eased = ease(t);
-  for (let i = 0; i < volData.length; i++) {
-    volData[i] = +(lerp(volFromData[i], volTargets[i], eased)).toFixed(1);
-  }
-  volChart.data.datasets[0].data = [...volData];
-  volChart.data.datasets[0].backgroundColor = volData.map(v =>
-    v > 700 ? 'rgba(240,165,0,0.75)' : v > 500 ? 'rgba(0,212,204,0.65)' : 'rgba(0,232,122,0.45)'
+  el('ticker-track').innerHTML = items+items;
+  el('ticker-track').querySelectorAll('.ticker-item').forEach(n =>
+    n.addEventListener('click', () => togglePin(n.dataset.sym))
   );
+}
+renderTicker();
+setInterval(() => {
+  tickerVals = tickerVals.map(t => {
+    const d=(Math.random()-0.5)*t.base*0.001;
+    return {...t, val:+(t.val+d).toFixed(4), chg:+(t.chg+d*0.3).toFixed(2)};
+  });
+  renderTicker();
+}, 3500);
+
+/* ─── PIN / UNPIN ─────────────────────────────── */
+function togglePin(sym){ pinnedSyms.includes(sym)?unpin(sym):pin(sym); }
+function pin(sym){
+  TFS.forEach(tf=>getCandles(sym,tf));
+  pinnedSyms.push(sym); activePin=sym;
+  renderPinBar(); renderSmallPanel(); renderTicker();
+}
+function unpin(sym){
+  pinnedSyms=pinnedSyms.filter(s=>s!==sym);
+  if(activePin===sym) activePin=pinnedSyms.length?pinnedSyms[pinnedSyms.length-1]:null;
+  renderPinBar(); renderSmallPanel(); renderTicker();
+}
+function switchTo(sym){
+  if(!pinnedSyms.includes(sym)) return;
+  activePin=sym; renderPinBar(); renderSmallPanel();
+}
+
+function renderPinBar(){
+  const bar=el('pin-bar'); bar.innerHTML='';
+  if(!pinnedSyms.length){
+    const e=document.createElement('span'); e.className='pin-empty';
+    e.textContent='No charts pinned — click any ticker above'; bar.appendChild(e); return;
+  }
+  pinnedSyms.forEach(sym=>{
+    const chip=document.createElement('div');
+    chip.className='pin-chip'+(sym===activePin?' active':'');
+    const label=document.createElement('span'); label.className='pin-chip-label'; label.textContent='📌 '+sym;
+    const exp=document.createElement('span'); exp.className='pin-chip-expand'; exp.textContent='⤢'; exp.title='Expand';
+    const x=document.createElement('span'); x.className='pin-chip-x'; x.textContent='×';
+    label.addEventListener('click', e=>{e.stopPropagation();switchTo(sym);});
+    exp.addEventListener('click',   e=>{e.stopPropagation();openModal(sym);});
+    x.addEventListener('click',     e=>{e.stopPropagation();unpin(sym);});
+    chip.append(label,exp,x); bar.appendChild(chip);
+  });
+  const hint=document.createElement('span'); hint.className='pin-hint';
+  hint.textContent='label=switch · ⤢=expand · ×=unpin'; bar.appendChild(hint);
+}
+
+/* ─── SMALL PANEL ─────────────────────────────── */
+let smallCanvas=null;
+
+function renderSmallPanel(){
+  const area=el('candle-area');
+  el('price-panel-title').textContent=activePin?activePin+' · PRICE ACTION':'PRICE ACTION';
+  if(!activePin){
+    smallCanvas=null;
+    area.innerHTML=`<div class="no-pin-msg"><span class="no-pin-title">No chart pinned</span><span class="no-pin-sub">Click any ticker to pin</span></div>`;
+    return;
+  }
+  area.innerHTML=`
+    <div class="candle-outer" id="small-outer">
+      <canvas id="small-canvas" class="candle-canvas"></canvas>
+      <div class="candle-overlay-tl">
+        <div class="candle-sym" id="c-sym">${activePin}</div>
+        <div class="candle-price" id="c-price">—</div>
+        <div class="candle-chg"  id="c-chg"></div>
+      </div>
+      <div class="candle-tf-bar" id="small-tf-bar"></div>
+    </div>`;
+  smallCanvas = el('small-canvas');
+  buildSmallTFBar();
+  redrawSmall();
+}
+
+function buildSmallTFBar(){
+  const bar=el('small-tf-bar'); if(!bar) return; bar.innerHTML='';
+  TFS.forEach(tf=>{
+    const b=document.createElement('button'); b.className='tf-btn'+(tf===activeTF?' on':''); b.textContent=tf;
+    b.addEventListener('click',()=>{ activeTF=tf; buildSmallTFBar(); redrawSmall(); }); bar.appendChild(b);
+  });
+}
+
+function redrawSmall(){
+  if(!activePin||!smallCanvas) return;
+  const outer=el('small-outer'); if(!outer) return;
+  smallCanvas.style.width  = outer.clientWidth+'px';
+  smallCanvas.style.height = outer.clientHeight+'px';
+  const candles=getCandles(activePin,activeTF);
+  const res=drawCandles(smallCanvas, candles, {modal:false});
+  if(res){
+    const {last, first}=res;
+    const pct=((last.c-first.o)/first.o*100);
+    const d=dp(last.c);
+    const pe=el('c-price'), ce=el('c-chg');
+    if(pe) pe.textContent=last.c.toFixed(d);
+    if(ce){ ce.textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%'; ce.style.color=pct>=0?'var(--green)':'var(--red)'; }
+  }
+}
+
+/* ─── MODAL ───────────────────────────────────── */
+let modalSym=null, modalTF='1m';
+
+function openModal(sym){
+  modalSym=sym; modalTF=activeTF;
+  el('modal-overlay').classList.add('open');
+  buildModalStats(sym); buildModalTFBar(); redrawModal(); buildModalSidebar(sym);
+}
+function closeModal(){
+  el('modal-overlay').classList.remove('open');
+  modalSym=null;
+}
+el('modal-close').addEventListener('click', closeModal);
+el('modal-overlay').addEventListener('click', e=>{ if(e.target===el('modal-overlay')) closeModal(); });
+
+function redrawModal(){
+  if(!modalSym) return;
+  const canvas=el('modal-canvas'); if(!canvas) return;
+  const wrap=el('modal-chart-wrap'); if(!wrap) return;
+  canvas.style.width  = wrap.clientWidth+'px';
+  canvas.style.height = wrap.clientHeight+'px';
+  drawCandles(canvas, getCandles(modalSym,modalTF), {modal:true, sym:modalSym});
+}
+
+function buildModalTFBar(){
+  const bar=el('modal-tf-bar'); bar.innerHTML='';
+  TFS.forEach(tf=>{
+    const b=document.createElement('button'); b.className='modal-tf-btn'+(tf===modalTF?' on':''); b.textContent=tf;
+    b.addEventListener('click',()=>{ modalTF=tf; buildModalTFBar(); redrawModal(); buildModalSidebar(modalSym); }); bar.appendChild(b);
+  });
+}
+
+function buildModalStats(sym){
+  const m=symMeta[sym]; if(!m) return;
+  const tv=tickerVals.find(t=>t.sym===sym);
+  const price=tv?tv.val:0, chg=tv?tv.chg:0;
+  const pct=(chg/price*100).toFixed(2);
+  const d=dp(price), chgCol=chg>=0?'var(--green)':'var(--red)';
+  const tinfo=TICKERS.find(t=>t.sym===sym);
+  el('modal-title').textContent=sym+(tinfo?' · '+tinfo.name:'');
+  const w52r=m.w52Hi-m.w52Lo;
+  const pos=w52r>0?Math.min(100,Math.max(0,((price-m.w52Lo)/w52r*100))).toFixed(1):50;
+  el('modal-stats').innerHTML=`
+    <div class="modal-stat">
+      <span class="ms-label">Last Price</span>
+      <span class="ms-val" style="color:var(--white);font-size:22px;">${price.toFixed(d)}</span>
+      <span class="ms-sub" style="color:${chgCol}">${chg>=0?'+':''}${chg.toFixed(2)} (${chg>=0?'+':''}${pct}%)</span>
+    </div>
+    <div class="modal-stat">
+      <span class="ms-label">Day Open</span>
+      <span class="ms-val" style="color:var(--muted)">${fmt(m.open,d)}</span>
+    </div>
+    <div class="modal-stat">
+      <span class="ms-label">Day High</span>
+      <span class="ms-val" style="color:var(--green)">${fmt(m.dayHi,d)}</span>
+    </div>
+    <div class="modal-stat">
+      <span class="ms-label">Day Low</span>
+      <span class="ms-val" style="color:var(--red)">${fmt(m.dayLo,d)}</span>
+    </div>
+    <div class="range-wrap">
+      <span class="ms-label">52-Week Range</span>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:10px;color:var(--red)">${fmt(m.w52Lo,d)}</span>
+        <span style="font-size:11px;color:var(--white);font-weight:700;">${price.toFixed(d)}</span>
+        <span style="font-size:10px;color:var(--green)">${fmt(m.w52Hi,d)}</span>
+      </div>
+      <div class="range-track"><div class="range-fill"></div><div class="range-cursor" style="left:${pos}%;"></div></div>
+      <div class="range-labels"><span>52W LOW</span><span>NOW ${pos}%</span><span>52W HIGH</span></div>
+    </div>
+    <div class="modal-stat">
+      <span class="ms-label">Volume</span>
+      <span class="ms-val" style="color:var(--cyan)">${m.vol}</span>
+      <span class="ms-sub">avg ${m.avgVol}</span>
+    </div>
+    <div class="modal-stat">
+      <span class="ms-label">Mkt Cap</span>
+      <span class="ms-val" style="color:var(--amber)">${m.mktCap}</span>
+    </div>`;
+}
+
+function buildModalSidebar(sym){
+  const m=symMeta[sym]; if(!m) return;
+  const tv=tickerVals.find(t=>t.sym===sym);
+  const price=tv?tv.val:0, chg=tv?tv.chg:0, d=dp(price);
+  const chgPct=(chg/price*100), candles=getCandles(sym,modalTF);
+  const last=candles[candles.length-1], first=candles[0];
+  const sessP=((last.c-first.o)/first.o*100);
+  el('modal-sidebar').innerHTML=`
+    <div class="sb-section">
+      <div class="sb-title">Price Details</div>
+      <div class="sb-row"><span class="sb-key">Last</span><span class="sb-val" style="color:var(--white)">${price.toFixed(d)}</span></div>
+      <div class="sb-row"><span class="sb-key">Open</span><span class="sb-val" style="color:var(--muted)">${fmt(m.open,d)}</span></div>
+      <div class="sb-row"><span class="sb-key">Day High</span><span class="sb-val" style="color:var(--green)">${fmt(m.dayHi,d)}</span></div>
+      <div class="sb-row"><span class="sb-key">Day Low</span><span class="sb-val" style="color:var(--red)">${fmt(m.dayLo,d)}</span></div>
+      <div class="sb-row"><span class="sb-key">Change</span><span class="sb-val" style="color:${chg>=0?'var(--green)':'var(--red)'}">${chg>=0?'+':''}${chg.toFixed(2)}</span></div>
+      <div class="sb-row"><span class="sb-key">Chg %</span><span class="sb-val" style="color:${chg>=0?'var(--green)':'var(--red)'}">${chg>=0?'+':''}${chgPct.toFixed(2)}%</span></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">52-Week</div>
+      <div class="sb-row"><span class="sb-key">High</span><span class="sb-val" style="color:var(--green)">${fmt(m.w52Hi,d)}</span></div>
+      <div class="sb-row"><span class="sb-key">Low</span><span class="sb-val" style="color:var(--red)">${fmt(m.w52Lo,d)}</span></div>
+      <div class="sb-row"><span class="sb-key">Range</span><span class="sb-val" style="color:var(--muted)">${fmt(m.w52Hi-m.w52Lo,d)}</span></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Session</div>
+      <div class="sb-row"><span class="sb-key">Perf</span><span class="sb-val" style="color:${sessP>=0?'var(--green)':'var(--red)'}">${sessP>=0?'+':''}${sessP.toFixed(2)}%</span></div>
+      <div class="sb-row"><span class="sb-key">Volume</span><span class="sb-val" style="color:var(--cyan)">${m.vol}</span></div>
+      <div class="sb-row"><span class="sb-key">Avg Vol</span><span class="sb-val" style="color:var(--muted)">${m.avgVol}</span></div>
+      <div class="sb-row"><span class="sb-key">Mkt Cap</span><span class="sb-val" style="color:var(--amber)">${m.mktCap}</span></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">Last Candle</div>
+      <div class="sb-row"><span class="sb-key">Open</span><span class="sb-val">${fmt(last.o,d)}</span></div>
+      <div class="sb-row"><span class="sb-key">High</span><span class="sb-val" style="color:var(--green)">${fmt(last.h,d)}</span></div>
+      <div class="sb-row"><span class="sb-key">Low</span><span class="sb-val" style="color:var(--red)">${fmt(last.l,d)}</span></div>
+      <div class="sb-row"><span class="sb-key">Close</span><span class="sb-val" style="color:${last.c>=last.o?'var(--green)':'var(--red)'}">${fmt(last.c,d)}</span></div>
+      <div class="sb-row"><span class="sb-key">Vol</span><span class="sb-val" style="color:var(--cyan)">${last.vol}K</span></div>
+    </div>`;
+}
+
+/* ─── LIVE UPDATE LOOP ────────────────────────── */
+setInterval(()=>{
+  pinnedSyms.forEach(sym=>TFS.forEach(tf=>pushCandle(sym,tf)));
+  redrawSmall();
+  if(modalSym){ redrawModal(); buildModalStats(modalSym); buildModalSidebar(modalSym); }
+}, 1500);
+
+window.addEventListener('resize', ()=>{ redrawSmall(); redrawModal(); });
+
+/* ─── VOLUME CHART ────────────────────────────── */
+const volLabels=Array.from({length:16},(_,i)=>(9+Math.floor(i*0.9375))+':00');
+const volData=volLabels.map(()=>rand(100,900,0));
+const volChart=new Chart(el('volChart').getContext('2d'),{
+  type:'bar',
+  data:{labels:volLabels,datasets:[{data:volData,
+    backgroundColor:volData.map(v=>v>700?'rgba(240,165,0,.75)':v>500?'rgba(0,212,204,.65)':'rgba(0,232,122,.45)'),
+    borderWidth:0,borderRadius:1}]},
+  options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},
+    plugins:{legend:{display:false},tooltip:{backgroundColor:'#0d1410',borderColor:'#1a3025',borderWidth:1,
+      titleColor:'#4a7a5a',bodyColor:'#d4e8dc',
+      callbacks:{label:c=>' '+c.parsed.y+'K lots'}}},
+    scales:{x:{ticks:{color:'#4a7a5a',font:{size:8},maxRotation:0},grid:{display:false},border:{display:false}},y:{display:false}}}
+});
+setInterval(()=>{
+  const i=Math.floor(Math.random()*volData.length);
+  volData[i]=Math.max(50,Math.min(1000,volData[i]+rand(-90,130,0)));
+  volChart.data.datasets[0].backgroundColor=volData.map(v=>v>700?'rgba(240,165,0,.75)':v>500?'rgba(0,212,204,.65)':'rgba(0,232,122,.45)');
   volChart.update('none');
-  if (t < 1) requestAnimationFrame(animateVol);
-}
+},2500);
 
-function updateVolChart() {
-  const idx = Math.floor(Math.random() * volTargets.length);
-  volFromData[idx] = volData[idx];
-  volTargets[idx] = Math.max(50, Math.min(1000, volTargets[idx] + rand(-80, 120, 0)));
-  volAnimStart = null;
-  requestAnimationFrame(animateVol);
-}
-setInterval(updateVolChart, 2500);
-
-/* ── ORDER BOOK — persistent DOM rows, in-place updates ── */
-let midPrice = 5210;
-let midTarget = 5210;
-let midFrom   = 5210;
-let midAnimStart = null;
-const MID_ANIM_MS = 600;
-const OB_LEVELS = 8;
-const OB_MAX_SZ = 2200;
-
-const obState = {
-  bids: Array.from({length: OB_LEVELS}, (_, i) => ({ price: midPrice - 0.25*(i+1), size: rand(100,2200,0) })),
-  asks: Array.from({length: OB_LEVELS}, (_, i) => ({ price: midPrice + 0.25*(i+1), size: rand(100,2200,0) })),
-};
-
-function buildOrderBookDOM() {
-  const bidsEl = $('bids');
-  const asksEl = $('asks');
-  bidsEl.innerHTML = `<div class="ob-header" style="text-align:right">size &nbsp; bid</div>`;
-  asksEl.innerHTML = `<div class="ob-header">ask &nbsp; size</div>`;
-  obState.bids.forEach((row, i) => {
-    const el = document.createElement('div');
-    el.className = 'ob-row bid';
-    el.style.justifyContent = 'flex-end';
-    el.dataset.idx = i;
-    el.innerHTML = `<span class="ob-row-bg" style="width:${(row.size/OB_MAX_SZ*100).toFixed(0)}%"></span>
-      <span class="ob-size">${Math.round(row.size)}</span>&nbsp;
-      <span class="ob-price-bid">${row.price.toFixed(2)}</span>`;
-    bidsEl.appendChild(el);
-  });
-  obState.asks.forEach((row, i) => {
-    const el = document.createElement('div');
-    el.className = 'ob-row ask';
-    el.dataset.idx = i;
-    el.innerHTML = `<span class="ob-row-bg" style="width:${(row.size/OB_MAX_SZ*100).toFixed(0)}%"></span>
-      <span class="ob-price-ask">${row.price.toFixed(2)}</span>&nbsp;
-      <span class="ob-size">${Math.round(row.size)}</span>`;
-    asksEl.appendChild(el);
-  });
-  $('ob-mid').textContent    = midPrice.toFixed(2);
-  $('ob-spread').textContent = 'spd ' + rand(0.1, 0.6, 1);
-}
-buildOrderBookDOM();
-
-function refreshOrderBookDOM(animT) {
-  const mp = lerp(midFrom, midTarget, ease(animT));
-  const bidRows = $('bids').querySelectorAll('.ob-row');
-  const askRows = $('asks').querySelectorAll('.ob-row');
-  obState.bids.forEach((row, i) => {
-    const el = bidRows[i];
-    if (!el) return;
-    const pct = (row.size / OB_MAX_SZ * 100).toFixed(0);
-    el.querySelector('.ob-row-bg').style.width  = pct + '%';
-    el.querySelector('.ob-size').textContent     = Math.round(row.size);
-    el.querySelector('.ob-price-bid').textContent = (mp - 0.25*(i+1)).toFixed(2);
-  });
-  obState.asks.forEach((row, i) => {
-    const el = askRows[i];
-    if (!el) return;
-    const pct = (row.size / OB_MAX_SZ * 100).toFixed(0);
-    el.querySelector('.ob-row-bg').style.width  = pct + '%';
-    el.querySelector('.ob-size').textContent     = Math.round(row.size);
-    el.querySelector('.ob-price-ask').textContent = (mp + 0.25*(i+1)).toFixed(2);
-  });
-  $('ob-mid').textContent = mp.toFixed(2);
-}
-
-let obSizeTargets = {
-  bids: obState.bids.map(r => r.size),
-  asks: obState.asks.map(r => r.size),
-};
-let obSizeFrom = {
-  bids: [...obSizeTargets.bids],
-  asks: [...obSizeTargets.asks],
-};
-let obAnimStart = null;
-const OB_ANIM_MS = 500;
-
-function animateOB(ts) {
-  if (!obAnimStart) obAnimStart = ts;
-  const t = Math.min((ts - obAnimStart) / OB_ANIM_MS, 1);
-  const eased = ease(t);
-  obState.bids.forEach((row, i) => { row.size = lerp(obSizeFrom.bids[i], obSizeTargets.bids[i], eased); });
-  obState.asks.forEach((row, i) => { row.size = lerp(obSizeFrom.asks[i], obSizeTargets.asks[i], eased); });
-  const mp = lerp(midFrom, midTarget, eased);
-  midPrice = +mp.toFixed(2);
-
-  const bidRows = $('bids').querySelectorAll('.ob-row');
-  const askRows = $('asks').querySelectorAll('.ob-row');
-  obState.bids.forEach((row, i) => {
-    const el = bidRows[i]; if (!el) return;
-    el.querySelector('.ob-row-bg').style.width   = (row.size / OB_MAX_SZ * 100).toFixed(1) + '%';
-    el.querySelector('.ob-size').textContent      = Math.round(row.size);
-    el.querySelector('.ob-price-bid').textContent = (mp - 0.25*(i+1)).toFixed(2);
-  });
-  obState.asks.forEach((row, i) => {
-    const el = askRows[i]; if (!el) return;
-    el.querySelector('.ob-row-bg').style.width   = (row.size / OB_MAX_SZ * 100).toFixed(1) + '%';
-    el.querySelector('.ob-size').textContent      = Math.round(row.size);
-    el.querySelector('.ob-price-ask').textContent = (mp + 0.25*(i+1)).toFixed(2);
-  });
-  $('ob-mid').textContent = mp.toFixed(2);
-
-  if (t < 1) requestAnimationFrame(animateOB);
-}
-
-function updateOrderBook() {
-  obSizeFrom.bids = obState.bids.map(r => r.size);
-  obSizeFrom.asks = obState.asks.map(r => r.size);
-  obSizeTargets.bids = obSizeTargets.bids.map(v => Math.max(50, Math.min(OB_MAX_SZ, v + rand(-300, 400, 0))));
-  obSizeTargets.asks = obSizeTargets.asks.map(v => Math.max(50, Math.min(OB_MAX_SZ, v + rand(-300, 400, 0))));
-  midFrom   = midPrice;
-  midTarget = +(midPrice + (Math.random() - 0.49) * 0.5).toFixed(2);
-  $('ob-spread').textContent = 'spd ' + rand(0.1, 0.6, 1);
-  obAnimStart = null;
-  requestAnimationFrame(animateOB);
-}
-setInterval(updateOrderBook, 2000);
-
-/* ── TRADE FLOW — smooth slide-in ── */
-const flowSyms     = ['SPX','NDQ','AAPL','NVDA','TSLA','AMZN','META','MSFT','GLD','BTC'];
-let   flowAnomCount   = 0;
-let   largePrintCount = 0;
-
-function addFlowRow() {
-  const now     = new Date();
-  const ts      = now.toUTCString().slice(17, 25);
-  const sym     = pick(flowSyms);
-  const side    = Math.random() > 0.45 ? 'buy' : 'sell';
-  const size    = rand(100, 5000, 0);
-  const price   = (5100 + Math.random() * 220).toFixed(2);
-  const isLarge = size > 3000;
-  const isAnom  = Math.random() < 0.05;
-
-  if (isLarge) largePrintCount++;
-  if (isAnom)  flowAnomCount++;
-
-  const row = document.createElement('div');
-  row.className = 'flow-row flow-entering';
-  row.innerHTML = `
-    <span class="flow-time">${ts}</span>
-    <span class="flow-sym ${side === 'buy' ? 'up' : 'dn'}">${sym}</span>
-    <span class="flow-side ${side}">${side.toUpperCase()}</span>
-    <span class="flow-size">${size.toLocaleString()}</span>
-    <span class="flow-price">${price}</span>
-    <span class="flow-flag ${isAnom ? 'anomaly' : ''}">${isLarge ? '◈ BLOCK' : isAnom ? '⚠ ANOM' : ''}</span>
-  `;
-
-  const log = $('flow-log');
-  log.insertBefore(row, log.firstChild);
-  requestAnimationFrame(() => requestAnimationFrame(() => row.classList.remove('flow-entering')));
-
-  while (log.children.length > 16) {
-    const last = log.lastChild;
-    last.classList.add('flow-exiting');
-    setTimeout(() => last.remove(), 300);
-    break;
+/* ─── ORDER BOOK ──────────────────────────────── */
+let midPrice=5210;
+function renderOrderBook(){
+  const mx=2200; let bH=`<div class="ob-header" style="text-align:right">size &nbsp; bid</div>`,aH=`<div class="ob-header">ask &nbsp; size</div>`;
+  for(let i=0;i<8;i++){
+    const bp=(midPrice-0.25*(i+1)).toFixed(2),ap=(midPrice+0.25*(i+1)).toFixed(2);
+    const bs=rand(100,2200,0),as=rand(100,2200,0);
+    bH+=`<div class="ob-row bid" style="justify-content:flex-end"><span class="ob-row-bg" style="width:${(bs/mx*100).toFixed(0)}%"></span><span class="ob-size">${bs}</span>&nbsp;<span class="ob-price-bid">${bp}</span></div>`;
+    aH+=`<div class="ob-row ask"><span class="ob-row-bg" style="width:${(as/mx*100).toFixed(0)}%"></span><span class="ob-price-ask">${ap}</span>&nbsp;<span class="ob-size">${as}</span></div>`;
   }
-
-  tweenText('s-vol',        (3.42 + Math.random() * 0.12).toFixed(2) + 'B');
-  $('s-prints').textContent    = largePrintCount;
-  $('s-anomalies').textContent = flowAnomCount;
-  $('s-last').textContent      = sym + ' ' + side.toUpperCase();
-  tweenText('s-adv',        rand(1.2, 3.2, 1) + '×');
-
-  if (isAnom) triggerAnomaly(sym);
-  updateSpark();
+  el('bids').innerHTML=bH; el('asks').innerHTML=aH;
+  el('ob-mid').textContent=midPrice.toFixed(2); el('ob-spread').textContent='spd '+rand(0.1,0.6,1);
+  midPrice+=(Math.random()-0.49)*0.6; midPrice=+midPrice.toFixed(2);
 }
-setInterval(addFlowRow, 1100);
+renderOrderBook(); setInterval(renderOrderBook,2000);
 
-/* ── TWEEN TEXT — smooth numeric text transitions ── */
-const tweenMap = {};
-function tweenText(id, newVal) {
-  const el = $(id);
-  if (!el) return;
-  el.textContent = newVal;
+/* ─── TRADE FLOW ──────────────────────────────── */
+const flowSyms=['SPX','NDQ','AAPL','NVDA','TSLA','AMZN','META','MSFT','GLD','BTC'];
+let flowAnomCount=0,largePrintCount=0;
+function addFlowRow(){
+  const ts=new Date().toUTCString().slice(17,25),sym=pick(flowSyms);
+  const side=Math.random()>0.45?'buy':'sell',size=rand(100,5000,0);
+  const price=(5100+Math.random()*220).toFixed(2);
+  const isLarge=size>3000,isAnom=Math.random()<0.05;
+  if(isLarge)largePrintCount++; if(isAnom)flowAnomCount++;
+  const row=document.createElement('div'); row.className='flow-row';
+  row.innerHTML=`<span class="flow-time">${ts}</span><span class="flow-sym ${side==='buy'?'up':'dn'}">${sym}</span><span class="flow-side ${side}">${side.toUpperCase()}</span><span class="flow-size">${size.toLocaleString()}</span><span class="flow-price">${price}</span><span class="flow-flag ${isAnom?'anomaly':''}">${isLarge?'◈ BLOCK':isAnom?'⚠ ANOM':''}</span>`;
+  const log=el('flow-log'); log.insertBefore(row,log.firstChild);
+  while(log.children.length>16) log.removeChild(log.lastChild);
+  el('s-vol').textContent=(3.42+Math.random()*0.12).toFixed(2)+'B';
+  el('s-prints').textContent=largePrintCount; el('s-anomalies').textContent=flowAnomCount;
+  el('s-last').textContent=sym+' '+side.toUpperCase(); el('s-adv').textContent=rand(1.2,3.2,1)+'×';
+  if(isAnom) triggerAnomaly(sym); updateSpark();
 }
+setInterval(addFlowRow,1100);
 
-/* ── METRIC TWEENING — smooth counter animation ── */
-const metricState = { vix: 21.4, flow: 1.34, depth: 842, spread: 0.8 };
-const metricTarget = { ...metricState };
-
-function animateMetrics(ts) {
-  let dirty = false;
-  const keys = ['vix','flow','depth','spread'];
-  keys.forEach(k => {
-    if (Math.abs(metricState[k] - metricTarget[k]) > 0.005) {
-      metricState[k] = lerp(metricState[k], metricTarget[k], 0.08);
-      dirty = true;
-    } else {
-      metricState[k] = metricTarget[k];
-    }
-  });
-  if (dirty) {
-    $('m-vix').textContent    = metricState.vix.toFixed(1);
-    $('m-vix').className      = 'metric-value ' + (metricState.vix > 24 ? 'dn' : metricState.vix < 20 ? 'up' : 'flat');
-    $('m-flow').textContent   = metricState.flow.toFixed(2);
-    $('m-depth').textContent  = Math.round(metricState.depth) + 'K';
-    $('m-spread').textContent = metricState.spread.toFixed(1);
-  }
-  requestAnimationFrame(animateMetrics);
-}
-requestAnimationFrame(animateMetrics);
-
-function updateMetrics() {
-  metricTarget.vix    = rand(17, 29, 1);
-  metricTarget.flow   = rand(0.8, 2.4, 2);
-  metricTarget.depth  = rand(600, 1200, 0);
-  metricTarget.spread = rand(0.3, 2.0, 1);
-}
-setInterval(updateMetrics, 4000);
-
-/* ── SPARK BAR ── */
-const sparkData = Array(14).fill(50);
-const sparkTargets = [...sparkData];
-const sparkFrom    = [...sparkData];
-let sparkAnimStart = null;
-const SPARK_ANIM_MS = 400;
-
-function animateSpark(ts) {
-  if (!sparkAnimStart) sparkAnimStart = ts;
-  const t = Math.min((ts - sparkAnimStart) / SPARK_ANIM_MS, 1);
-  const eased = ease(t);
-  const el = $('spark');
-  el.innerHTML = sparkData.map((_, i) => {
-    const v = lerp(sparkFrom[i] || 50, sparkTargets[i], eased);
-    return `<div class="spark-bar" style="height:${v.toFixed(1)}%;background:${v > 65 ? 'var(--amber)' : 'var(--green)'}"></div>`;
-  }).join('');
-  if (t < 1) requestAnimationFrame(animateSpark);
-}
-
-function updateSpark() {
-  sparkData.push(rand(20, 80, 0));
-  if (sparkData.length > 14) sparkData.shift();
-  sparkFrom.length = 0;
-  const bars = $('spark').querySelectorAll('.spark-bar');
-  bars.forEach(b => sparkFrom.push(parseFloat(b.style.height) || 50));
-  while (sparkFrom.length < sparkData.length) sparkFrom.push(50);
-  sparkTargets.length = 0;
-  sparkData.forEach(v => sparkTargets.push(v));
-  sparkAnimStart = null;
-  requestAnimationFrame(animateSpark);
+/* ─── SPARK ───────────────────────────────────── */
+const sparkData=Array(14).fill(50);
+function updateSpark(){
+  sparkData.push(rand(20,80,0)); if(sparkData.length>14) sparkData.shift();
+  el('spark').innerHTML=sparkData.map(v=>`<div class="spark-bar" style="height:${v}%;background:${v>65?'var(--amber)':'var(--green)'}"></div>`).join('');
 }
 updateSpark();
 
-/* ── ANOMALY / ALERT SYSTEM ── */
-const anomalyMessages = [
-  sym => `Unusual size print: ${sym} — potential block accumulation`,
-  sym => `${sym} diverging from index — momentum shift`,
-  sym => `Sell-side depth thin — ${sym} level vulnerable`,
-  sym => `Cross-asset correlation break detected near ${sym}`,
-  sym => `Order imbalance spike: ${sym} — watch for reversal`,
-  sym => `${sym} bid stacking anomaly — iceberg suspected`,
-  sym => `${sym} vol surface skew widening unexpectedly`,
-];
-const signalTemplates = [
-  { type: 'warn',  icon: '!', text: sym => `Volume surge: ${sym} +3σ above 15m avg` },
-  { type: 'info',  icon: '↑', text: sym => `${sym} momentum building — 5m RSI > 70` },
-  { type: 'alert', icon: '▲', text: sym => `${sym} prints outside expected range` },
-  { type: 'warn',  icon: '~', text: sym => `Spread widening on ${sym} — liquidity watch` },
-  { type: 'info',  icon: '◈', text: sym => `Block print confirmed: ${sym} > 2500 lots` },
-  { type: 'alert', icon: '✕', text: sym => `${sym} aggressive market-sell detected` },
-];
+/* ─── METRICS ─────────────────────────────────── */
+setInterval(()=>{
+  const vix=rand(17,29,1),flow=rand(0.8,2.4,2),dep=rand(600,1200,0),sprd=rand(0.3,2.0,1);
+  el('m-vix').textContent=vix; el('m-vix').className='metric-value '+(vix>24?'dn':vix<20?'up':'flat');
+  el('m-flow').textContent=flow; el('m-depth').textContent=dep+'K'; el('m-spread').textContent=sprd;
+},4000);
 
-let signalCount  = 0;
-let alertVisible = false;
-
-function triggerAnomaly(sym) {
-  if (alertVisible) return;
-  $('alert-msg').textContent = pick(anomalyMessages)(sym);
-  const banner = $('alert-banner');
-  banner.classList.add('visible');
-  alertVisible = true;
-  setTimeout(() => { banner.classList.remove('visible'); alertVisible = false; }, 5500);
+/* ─── ALERTS ──────────────────────────────────── */
+const anomMsgs=[
+  s=>`Unusual size print: ${s} — potential block accumulation`,
+  s=>`${s} diverging from index — momentum shift`,
+  s=>`Order imbalance spike: ${s} — watch for reversal`,
+  s=>`${s} bid stacking anomaly — iceberg suspected`,
+];
+const sigTpls=[
+  {type:'warn', icon:'!',text:s=>`Volume surge: ${s} +3σ above 15m avg`},
+  {type:'info', icon:'↑',text:s=>`${s} momentum building — 5m RSI > 70`},
+  {type:'alert',icon:'▲',text:s=>`${s} prints outside expected range`},
+  {type:'warn', icon:'~',text:s=>`Spread widening on ${s} — liquidity watch`},
+  {type:'info', icon:'◈',text:s=>`Block print confirmed: ${s} > 2500 lots`},
+];
+let signalCount=0,alertVisible=false;
+function triggerAnomaly(sym){
+  if(alertVisible) return;
+  el('alert-msg').textContent=pick(anomMsgs)(sym);
+  el('alert-banner').classList.add('visible'); alertVisible=true;
+  setTimeout(()=>{el('alert-banner').classList.remove('visible'); alertVisible=false;},5500);
   addSignal(sym);
 }
-
-$('alert-dismiss').addEventListener('click', () => {
-  $('alert-banner').classList.remove('visible');
-  alertVisible = false;
-});
-
-function addSignal(sym) {
-  const tpl = pick(signalTemplates);
-  signalCount++;
-  $('signal-count').textContent = signalCount + ' signal' + (signalCount !== 1 ? 's' : '');
-  const row = document.createElement('div');
-  row.className = 'signal-row signal-entering';
-  const ts = new Date().toUTCString().slice(17, 25);
-  row.innerHTML = `
-    <div class="signal-icon ${tpl.type}">${tpl.icon}</div>
-    <div class="signal-text">${tpl.text(sym)}</div>
-    <div class="signal-age">${ts}</div>
-  `;
-  const list = $('signal-list');
-  list.insertBefore(row, list.firstChild);
-  requestAnimationFrame(() => requestAnimationFrame(() => row.classList.remove('signal-entering')));
-  while (list.children.length > 7) list.removeChild(list.lastChild);
+el('alert-dismiss').addEventListener('click',()=>{el('alert-banner').classList.remove('visible'); alertVisible=false;});
+function addSignal(sym){
+  const tpl=pick(sigTpls); signalCount++;
+  el('signal-count').textContent=signalCount+' signal'+(signalCount!==1?'s':'');
+  const row=document.createElement('div'); row.className='signal-row';
+  row.innerHTML=`<div class="signal-icon ${tpl.type}">${tpl.icon}</div><div class="signal-text">${tpl.text(sym)}</div><div class="signal-age">${new Date().toUTCString().slice(17,25)}</div>`;
+  const list=el('signal-list'); list.insertBefore(row,list.firstChild);
+  while(list.children.length>7) list.removeChild(list.lastChild);
 }
+setInterval(()=>{ if(Math.random()<0.15) addSignal(pick(flowSyms)); },8000);
 
-setInterval(() => { if (Math.random() < 0.15) addSignal(pick(flowSyms)); }, 8000);
+/* ─── INIT ────────────────────────────────────── */
+renderSmallPanel();
 </script>
 </html>
